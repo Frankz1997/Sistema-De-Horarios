@@ -1338,12 +1338,12 @@ body::-webkit-scrollbar {
 
 .modal-container {
     background-color: #ffffff !important; /* Fondo blanco sólido */
-    border-radius: 12px;
+    border-radius: 20px; /* Aumentado de 12px a 20px para bordes más redondeados */
     width: 100%;
     max-width: 600px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     animation: slideIn 0.3s ease-out;
-    overflow: visible;
+    overflow: hidden; /* Cambiado de visible a hidden para que los bordes redondeados se apliquen correctamente */
 }
 
 .modal-container.modal-large {
@@ -3498,6 +3498,7 @@ body.sidebar-open {
     /* Cards más pequeños en móvil */
     .card {
         padding: 1rem;
+        border-radius: 16px; /* Bordes más redondeados en móvil */
     }
     
     .card-header {
@@ -3530,6 +3531,7 @@ body.sidebar-open {
     .btn {
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
+        border-radius: 12px; /* Botones más redondeados en móvil */
     }
     
     .btn i,
@@ -3550,7 +3552,7 @@ body.sidebar-open {
         max-width: 95%;
         max-height: 85vh;
         margin: 0 auto;
-        border-radius: 0.5rem;
+        border-radius: 20px; /* Bordes más redondeados en móvil también */
         overflow: hidden;
     }
     
@@ -3590,18 +3592,22 @@ body.sidebar-open {
     .modal-body textarea {
         font-size: 0.9rem;
         padding: 0.5rem;
+        border-radius: 10px; /* Inputs más redondeados en móvil */
     }
     
     .modal-footer {
-        padding: 0.75rem;
+        padding: 0.75rem 1rem;
         flex-direction: column-reverse;
         gap: 0.5rem;
+        justify-content: center;
     }
     
     .modal-footer .btn {
-        width: 100%;
-        padding: 0.65rem;
-        font-size: 0.9rem;
+        width: 85%;
+        max-width: 300px;
+        margin: 0 auto;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
     }
     
     /* Chips y botones de selección en modales móviles */
@@ -3689,14 +3695,26 @@ body.sidebar-open {
         margin-bottom: 1rem;
     }
     
-    /* Login view ajustes */
+    /* Login view ajustes - SIN MÁRGENES EN MÓVIL */
     #login-view {
-        padding: 1rem;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .login-card {
-        padding: 1.5rem;
-        margin: 1rem auto;
+        max-width: 100%;
+        width: 100%;
+        min-height: 100vh;
+        padding: 2rem 1.5rem;
+        margin: 0;
+        border-radius: 0; /* Sin bordes redondeados en móvil para cubrir toda la pantalla */
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .login-card h2 {
@@ -3733,10 +3751,10 @@ body.sidebar-open {
     }
     
     .modal-container {
-        width: 100%;
-        margin: 0;
-        border-radius: 0;
-        max-height: 100vh;
+        width: 95%;
+        margin: 0 auto;
+        border-radius: 20px; /* Mantener bordes redondeados incluso en pantallas muy pequeñas */
+        max-height: 90vh;
     }
     
     table {
