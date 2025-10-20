@@ -1,0 +1,27 @@
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Deno
+.deno/
+
+# Editor directories
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies (if using node_modules)
+node_modules/
+
+# Build outputs
+dist/
+build/
