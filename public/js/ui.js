@@ -116,9 +116,11 @@ export function renderSidebar() {
 
     const menuItems = [
         { id: 'dashboard', label: 'Inicio', icon: 'layout-dashboard', roles: ['administrador', 'maestro'] },
+        { id: 'mi-perfil', label: 'Mi Perfil', icon: 'user-circle', roles: ['maestro'] },
         { id: 'maestros', label: 'Maestros', icon: 'users', roles: ['administrador'] },
         { id: 'asignaturas', label: 'Asignaturas', icon: 'book-open', roles: ['administrador'] },
         { id: 'aulas', label: 'Aulas', icon: 'door-open', roles: ['administrador'] },
+        { id: 'carreras', label: 'Carreras', icon: 'graduation-cap', roles: ['administrador'] },
         { id: 'horarios', label: 'Horarios', icon: 'calendar', roles: ['administrador', 'maestro'] },
         { id: 'reportes', label: 'Reportes', icon: 'file-text', roles: ['administrador', 'maestro'] },
         { id: 'configuraciones', label: 'Configuración', icon: 'settings', roles: ['administrador'] },

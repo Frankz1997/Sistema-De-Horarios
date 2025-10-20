@@ -47,6 +47,9 @@ export function renderAsignaturas() {
 }
 
 function getAsignaturaFormBody(asignatura = {}) {
+    // Filtrar solo carreras activas y ordenar por código
+    const carrerasActivas = state.carreras.filter(c => c.activo).sort((a, b) => a.codigo.localeCompare(b.codigo));
+    
     return `
         <form id="asignatura-form">
             <div class="form-group">
@@ -60,7 +63,8 @@ function getAsignaturaFormBody(asignatura = {}) {
             <div class="form-group">
                 <label for="asignatura-carrera">Carrera</label>
                 <select id="asignatura-carrera" required>
-                    ${state.config.carreras.map(c => `<option value="${c}" ${asignatura.carrera === c ? 'selected' : ''}>${c}</option>`).join('')}
+                    <option value="">Selecciona una carrera</option>
+                    ${carrerasActivas.map(c => `<option value="${c.nombre}" ${asignatura.carrera === c.nombre ? 'selected' : ''}>${c.codigo} - ${c.nombre}</option>`).join('')}
                 </select>
             </div>
             <div class="form-group">

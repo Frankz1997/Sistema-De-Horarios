@@ -38,9 +38,24 @@ export class CustomSelect {
         this.dropdown = document.createElement('div');
         this.dropdown.className = 'custom-select-dropdown';
         
+        // Crear campo de búsqueda
+        this.searchInput = document.createElement('input');
+        this.searchInput.type = 'text';
+        this.searchInput.className = 'custom-select-search';
+        this.searchInput.placeholder = 'Buscar...';
+        this.searchInput.autocomplete = 'off';
+        
+        // Contenedor para el input de búsqueda
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'custom-select-search-container';
+        searchContainer.appendChild(this.searchInput);
+        
         // Crear la lista de opciones
         this.optionsList = document.createElement('ul');
         this.optionsList.className = 'custom-select-options';
+        
+        // Guardar todas las opciones para filtrado
+        this.allOptions = [];
         
         this.options.forEach((option, index) => {
             if (option.value === '' && index === 0) {
@@ -53,15 +68,20 @@ export class CustomSelect {
             li.textContent = option.text;
             li.dataset.value = option.value;
             li.dataset.index = index;
+            li.dataset.searchText = option.text.toLowerCase(); // Para búsqueda case-insensitive
             
             if (index === this.selectedIndex) {
                 li.classList.add('selected');
             }
             
             this.optionsList.appendChild(li);
+            this.allOptions.push(li);
         });
 
+        // Agregar search y lista al dropdown
+        this.dropdown.appendChild(searchContainer);
         this.dropdown.appendChild(this.optionsList);
+        
         this.customSelect.appendChild(this.selectButton);
         this.customSelect.appendChild(this.dropdown);
 
@@ -85,6 +105,36 @@ export class CustomSelect {
             const option = e.target.closest('.custom-select-option');
             if (option) {
                 this.selectOption(option);
+            }
+        });
+
+        // Búsqueda en tiempo real
+        this.searchInput.addEventListener('input', (e) => {
+            this.filterOptions(e.target.value);
+        });
+
+        // Prevenir que el click en el input cierre el dropdown
+        this.searchInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Navegación con teclado en el input de búsqueda
+        this.searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const firstVisible = this.optionsList.querySelector('.custom-select-option:not([style*="display: none"])');
+                if (firstVisible) {
+                    firstVisible.focus();
+                }
+            } else if (e.key === 'Escape') {
+                this.close();
+                this.selectButton.focus();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const firstVisible = this.optionsList.querySelector('.custom-select-option:not([style*="display: none"])');
+                if (firstVisible) {
+                    this.selectOption(firstVisible);
+                }
             }
         });
 
@@ -169,9 +219,29 @@ export class CustomSelect {
         
         this.dropdown.style.display = 'block';
         
+        // Si está dentro de un modal, usar position fixed y calcular posición
+        const isInModal = this.customSelect.closest('.modal-body');
+        if (isInModal) {
+            const buttonRect = this.selectButton.getBoundingClientRect();
+            this.dropdown.style.position = 'fixed';
+            this.dropdown.style.top = `${buttonRect.bottom + 6}px`;
+            this.dropdown.style.left = `${buttonRect.left}px`;
+            this.dropdown.style.width = `${buttonRect.width}px`;
+            this.dropdown.style.right = 'auto'; // Resetear right para que no interfiera
+        } else {
+            // Resetear a position absolute para dropdowns fuera de modales
+            this.dropdown.style.position = 'absolute';
+            this.dropdown.style.top = 'calc(100% + 6px)';
+            this.dropdown.style.left = '0';
+            this.dropdown.style.right = '0';
+            this.dropdown.style.width = 'auto';
+        }
+        
         // Animación
         setTimeout(() => {
             this.dropdown.classList.add('show');
+            // Enfocar el input de búsqueda automáticamente
+            this.searchInput.focus();
         }, 10);
     }
 
@@ -180,11 +250,64 @@ export class CustomSelect {
         this.customSelect.classList.remove('open');
         this.dropdown.classList.remove('show');
         
+        // Limpiar búsqueda al cerrar
+        this.searchInput.value = '';
+        this.filterOptions('');
+        
         setTimeout(() => {
             this.dropdown.style.display = 'none';
             // Restaurar z-index base cuando se cierra
             this.customSelect.style.zIndex = this.baseZIndex;
         }, 200); // Duración de la animación
+    }
+
+    filterOptions(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        let hasVisibleOptions = false;
+
+        this.allOptions.forEach(option => {
+            const searchText = option.dataset.searchText;
+            
+            // Si no hay término de búsqueda, mostrar todas las opciones
+            if (term === '') {
+                option.style.display = '';
+                hasVisibleOptions = true;
+                return;
+            }
+            
+            // Dividir el término de búsqueda en palabras para búsqueda más flexible
+            const searchWords = term.split(/\s+/).filter(word => word.length > 0);
+            
+            // La opción es visible si contiene TODAS las palabras buscadas
+            const matchesAllWords = searchWords.every(word => searchText.includes(word));
+            
+            if (matchesAllWords) {
+                option.style.display = '';
+                hasVisibleOptions = true;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        // Mostrar mensaje si no hay resultados
+        let noResultsMsg = this.optionsList.querySelector('.no-results-message');
+        
+        if (!hasVisibleOptions && term !== '') {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('li');
+                noResultsMsg.className = 'no-results-message';
+                noResultsMsg.style.padding = '1rem';
+                noResultsMsg.style.textAlign = 'center';
+                noResultsMsg.style.color = 'var(--muted-foreground)';
+                noResultsMsg.style.fontStyle = 'italic';
+                noResultsMsg.style.listStyle = 'none';
+                noResultsMsg.textContent = 'No se encontraron resultados';
+                this.optionsList.appendChild(noResultsMsg);
+            }
+            noResultsMsg.style.display = '';
+        } else if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
     }
 
     selectOption(optionElement) {
@@ -230,6 +353,7 @@ export class CustomSelect {
     updateOptions() {
         this.options = Array.from(this.originalSelect.options);
         this.optionsList.innerHTML = '';
+        this.allOptions = [];
         
         this.options.forEach((option, index) => {
             if (option.value === '' && index === 0) {
@@ -241,6 +365,7 @@ export class CustomSelect {
             li.textContent = option.text;
             li.dataset.value = option.value;
             li.dataset.index = index;
+            li.dataset.searchText = option.text.toLowerCase();
             li.tabIndex = 0;
             
             if (index === this.selectedIndex) {
@@ -248,6 +373,7 @@ export class CustomSelect {
             }
             
             this.optionsList.appendChild(li);
+            this.allOptions.push(li);
         });
     }
 

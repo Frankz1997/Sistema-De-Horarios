@@ -153,25 +153,39 @@ export function renderReportes() {
         `;
     } else { // Si es maestro
         tipoReporte = 'maestro'; // Forzar tipo maestro
-        maestroSeleccionado = state.maestros.find(m => m.email === state.user.email)?.id || ''; // Preseleccionar su propio ID
+        const maestroActual = state.maestros.find(m => m.email === state.user.email);
+        maestroSeleccionado = maestroActual?.id || ''; // Preseleccionar su propio ID
+        
         selectorsHtml = `
+            <div class="info-card" style="background: var(--info-light); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <p style="margin: 0; color: var(--info); font-size: 0.9rem;">
+                    <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle;"></i>
+                    Solo puedes generar tu propio reporte de horarios
+                </p>
+            </div>
             <div class="form-group">
-                <label>Tipo de Reporte</label>
-                <div class="report-type-options">
-                    <button class="report-type-btn active" data-tipo="maestro">
-                        <i data-lucide="user"></i> Tu Horario
-                    </button>
+                <label>Tu Horario</label>
+                <div style="background: var(--background); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">
+                    <p style="margin: 0; font-weight: 500; color: var(--foreground);">
+                        ${maestroActual?.nombre || 'Maestro'}
+                    </p>
+                    <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted-foreground);">
+                        ${maestroActual?.especialidad || 'Sin especialidad'}
+                    </p>
                 </div>
                 <input type="hidden" id="maestro-select" value="${maestroSeleccionado}">
             </div>
         `;
     }
 
+    const titulo = isAdmin ? 'Reportes' : 'Mi Reporte de Horarios';
+    const descripcion = isAdmin ? 'Genera e imprime reportes de horarios.' : 'Consulta y genera tu reporte de horarios.';
+    
     return `
         <div class="view-header">
             <div>
-                <h2>Reportes</h2>
-                <p>Genera e imprime reportes de horarios.</p>
+                <h2>${titulo}</h2>
+                <p>${descripcion}</p>
             </div>
         </div>
         <div class="grid-container grid-cols-3 lg-grid-cols-3">

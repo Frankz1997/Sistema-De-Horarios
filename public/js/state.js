@@ -9,6 +9,7 @@ export const state = {
     maestros: [],
     asignaturas: [],
     aulas: [],
+    carreras: [],
     horarios: [],
     configuracion: {
         horarios: null,

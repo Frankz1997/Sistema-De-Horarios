@@ -64,7 +64,7 @@ async function checkAdminExists() {
         console.log('📊 Respuesta de Supabase:', { data, error });
         
         if (error) {
-            console.error('❌ Error al verificar administrador:', error);
+            console.error('Error al verificar administrador:', error);
             return false;
         }
         
@@ -81,7 +81,7 @@ async function checkAdminExists() {
         
         return adminExists;
     } catch (error) {
-        console.error('💥 Excepción al verificar administrador:', error);
+        console.error('Excepción al verificar administrador:', error);
         return false;
     }
 }

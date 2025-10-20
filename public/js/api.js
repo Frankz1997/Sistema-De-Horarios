@@ -82,6 +82,28 @@ export const api = {
             return { success: true };
         },
     },
+    carreras: {
+        getAll: async () => {
+            const { data, error } = await supabase.from('carreras').select('*').order('codigo', { ascending: true });
+            if (error) throw error;
+            return data;
+        },
+        add: async (carreraData) => {
+            const { data, error } = await supabase.from('carreras').insert([carreraData]).select();
+            if (error) throw error;
+            return data[0];
+        },
+        update: async (id, carreraData) => {
+            const { data, error } = await supabase.from('carreras').update(carreraData).eq('id', id).select();
+            if (error) throw error;
+            return data[0];
+        },
+        delete: async (id) => {
+            const { error } = await supabase.from('carreras').delete().eq('id', id);
+            if (error) throw error;
+            return { success: true };
+        },
+    },
     horarios: {
         getAll: async () => {
             const { data, error } = await supabase.from('horarios').select('*');

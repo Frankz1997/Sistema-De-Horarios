@@ -502,18 +502,52 @@ body::-webkit-scrollbar {
     border-radius: 0.5rem;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     z-index: 99999; /* Z-index muy alto para estar sobre todo */
-    max-height: 240px;
+    max-height: 200px; /* Reducido de 240px a 200px */
     overflow-y: auto;
+    overflow-x: hidden;
     display: none;
     opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.2s ease;
+    transition: opacity 0.15s ease;
+}
+
+/* Dropdown dentro de modales usa position fixed para evitar overflow */
+.modal-body .custom-select-dropdown {
+    position: fixed;
+    max-height: 250px; /* Altura máxima más generosa para modales */
 }
 
 .custom-select-dropdown.show {
     display: block;
     opacity: 1 !important; /* Asegurar opacidad completa cuando está visible */
-    transform: translateY(0);
+}
+
+/* Campo de búsqueda dentro del dropdown */
+.custom-select-search-container {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--background);
+}
+
+.custom-select-search {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background-color: var(--card);
+    color: var(--foreground);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.custom-select-search:focus {
+    border-color: var(--uas-blue);
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+}
+
+.custom-select-search::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.7;
 }
 
 .custom-select-options {
@@ -3025,6 +3059,22 @@ body::-webkit-scrollbar {
     border-color: var(--border-color);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
     opacity: 1 !important; /* Asegurar opacidad completa */
+}
+
+[data-theme="dark"] .custom-select-search-container {
+    background-color: var(--background);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .custom-select-search {
+    background-color: var(--card);
+    color: var(--foreground);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .custom-select-search:focus {
+    border-color: var(--uas-gold);
+    box-shadow: 0 0 0 3px rgba(255, 183, 27, 0.2);
 }
 
 [data-theme="dark"] .custom-select-option:hover {

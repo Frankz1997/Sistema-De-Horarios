@@ -9,9 +9,11 @@ import { renderDashboard } from './views/dashboard.js';
 import { renderMaestros, handleAddMaestro, handleEditMaestro, handleDeleteMaestro, handleMaestroFormSubmit } from './views/maestros.js';
 import { renderAsignaturas, handleAddAsignatura, handleEditAsignatura, handleDeleteAsignatura, handleAsignaturaFormSubmit } from './views/asignaturas.js';
 import { renderAulas, handleAddAula, handleEditAula, handleDeleteAula, handleAulaFormSubmit } from './views/aulas.js';
-import { renderHorarios, renderHorariosContent, handleAddHorario, handleEditHorario, handleDeleteHorario, handleHorarioFormSubmit } from './views/horarios.js';
+import { renderCarreras, handleAddCarrera, handleEditCarrera, handleDeleteCarrera, handleCarreraFormSubmit } from './views/carreras.js';
+import { renderHorarios, renderHorariosContent, initAccordionListeners, handleAddHorario, handleEditHorario, handleDeleteHorario, handleHorarioFormSubmit } from './views/horarios.js';
 import { renderReportes, handleReportesClick, handleReportesChange } from './views/reportes.js';
 import { renderConfiguraciones, handleGuardarConfiguracion, handleResetConfiguracion, applyTheme, setupThemeToggle, setupHeaderThemeToggle, setupSettingsDropdowns, initConfiguracionesListeners } from './views/configuraciones.js';
+import { renderMiPerfil, handleEditPerfil, handlePerfilFormSubmit } from './views/mi-perfil.js';
 import { initializeCustomSelects } from './components/custom-select.js';
 
 const appRoot = document.getElementById('app-root');
@@ -21,9 +23,11 @@ const viewRenderers = {
     maestros: renderMaestros,
     asignaturas: renderAsignaturas,
     aulas: renderAulas,
+    carreras: renderCarreras,
     horarios: renderHorarios,
     reportes: renderReportes,
     configuraciones: renderConfiguraciones,
+    'mi-perfil': renderMiPerfil,
 };
 
 export function renderCurrentView() {
@@ -65,6 +69,11 @@ function updateHorariosContent() {
             lucide.createIcons();
             initializeCustomSelects('select:not([data-native])');
             
+            // Inicializar event listeners de acordeones si estamos en vista lista
+            if (state.horariosViewMode === 'lista') {
+                initAccordionListeners();
+            }
+            
             // Actualizar los botones del toggle
             document.getElementById('view-calendario-btn').classList.toggle('active', state.horariosViewMode === 'calendario');
             document.getElementById('view-lista-btn').classList.toggle('active', state.horariosViewMode === 'lista');
@@ -77,16 +86,18 @@ function updateHorariosContent() {
 }
 
 export async function loadInitialData() {
-    const [maestros, asignaturas, aulas, horarios, configuraciones] = await Promise.all([
+    const [maestros, asignaturas, aulas, carreras, horarios, configuraciones] = await Promise.all([
         api.maestros.getAll(),
         api.asignaturas.getAll(),
         api.aulas.getAll(),
+        api.carreras.getAll(),
         api.horarios.getAll(),
         api.configuracion.getAll(),
     ]);
     loadData('maestros', maestros);
     loadData('asignaturas', asignaturas);
     loadData('aulas', aulas);
+    loadData('carreras', carreras);
     loadData('horarios', horarios);
     
     // Procesar configuraciones en un objeto más accesible
@@ -182,6 +193,10 @@ function setupAppEventListeners() {
                 navigateTo('maestros');
             } else if (action === 'asignaturas') {
                 navigateTo('asignaturas');
+            } else if (action === 'mi-perfil') {
+                navigateTo('mi-perfil');
+            } else if (action === 'reportes') {
+                navigateTo('reportes');
             }
             return;
         }
@@ -205,6 +220,9 @@ function setupAppEventListeners() {
             if (target.closest('.edit-maestro-btn')) handleEditMaestro(target.closest('.edit-maestro-btn').dataset.id);
             if (target.closest('.delete-maestro-btn')) handleDeleteMaestro(target.closest('.delete-maestro-btn').dataset.id);
         }
+        else if (view === 'mi-perfil') {
+            if (target.id === 'edit-perfil-btn') handleEditPerfil();
+        }
         else if (view === 'asignaturas') {
             if (target.id === 'add-asignatura-btn') handleAddAsignatura();
             if (target.closest('.edit-asignatura-btn')) handleEditAsignatura(target.closest('.edit-asignatura-btn').dataset.id);
@@ -214,6 +232,11 @@ function setupAppEventListeners() {
             if (target.id === 'add-aula-btn') handleAddAula();
             if (target.closest('.edit-aula-btn')) handleEditAula(target.closest('.edit-aula-btn').dataset.id);
             if (target.closest('.delete-aula-btn')) handleDeleteAula(target.closest('.delete-aula-btn').dataset.id);
+        }
+        else if (view === 'carreras') {
+            if (target.id === 'add-carrera-btn') handleAddCarrera();
+            if (target.closest('.edit-carrera-btn')) handleEditCarrera(target.closest('.edit-carrera-btn').dataset.id);
+            if (target.closest('.delete-carrera-btn')) handleDeleteCarrera(target.closest('.delete-carrera-btn').dataset.id);
         }
         else if (view === 'horarios') {
             if (target.id === 'view-calendario-btn') { 
@@ -254,7 +277,9 @@ function setupAppEventListeners() {
         if (e.target.id === 'maestro-form') handleMaestroFormSubmit(e);
         if (e.target.id === 'asignatura-form') handleAsignaturaFormSubmit(e);
         if (e.target.id === 'aula-form') handleAulaFormSubmit(e);
+        if (e.target.id === 'carrera-form') handleCarreraFormSubmit(e);
         if (e.target.id === 'horario-form') handleHorarioFormSubmit(e);
+        if (e.target.id === 'perfil-form') handlePerfilFormSubmit(e);
     });
 
     modalContainer.addEventListener('click', (e) => {
