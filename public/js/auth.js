@@ -35,6 +35,102 @@ function showError(message) {
 }
 
 /**
+ * Verifica si ya existe un administrador en el sistema
+ * Consulta la tabla usuarios de Supabase
+ * @returns {Promise<boolean>} True si existe un administrador, false si no
+ */
+async function checkAdminExists() {
+    try {
+        // Consultar la tabla usuarios para ver si existe un administrador
+        const { data, error } = await supabase
+            .from('usuarios')
+            .select('id, role')
+            .eq('role', 'administrador')
+            .limit(1);
+        
+        if (error) {
+            console.error('Error al verificar administrador:', error);
+            // Si la tabla no existe aún, retornar false
+            return false;
+        }
+        
+        const adminExists = data && data.length > 0;
+        
+        // Guardar en localStorage para cachear el resultado
+        localStorage.setItem('system_has_admin', adminExists ? 'true' : 'false');
+        
+        return adminExists;
+    } catch (error) {
+        console.error('Error al verificar administrador:', error);
+        return false;
+    }
+}
+
+/**
+ * Bloquea o desbloquea el campo de rol según si existe un administrador
+ * @param {boolean} adminExists Si existe un administrador en el sistema
+ */
+function updateRoleFieldState(adminExists) {
+    const roleSelect = document.getElementById('role');
+    if (!roleSelect) return;
+
+    if (adminExists) {
+        // Bloquear el campo en "maestro"
+        roleSelect.value = 'maestro';
+        roleSelect.disabled = true;
+        
+        // Bloquear también el custom select si existe
+        const customSelectWrapper = roleSelect.closest('.form-group')?.querySelector('.custom-select-wrapper');
+        if (customSelectWrapper) {
+            customSelectWrapper.classList.add('disabled');
+            customSelectWrapper.style.pointerEvents = 'none';
+            customSelectWrapper.style.opacity = '0.6';
+            
+            // Actualizar el texto visible del custom select
+            const customSelectTrigger = customSelectWrapper.querySelector('.custom-select-trigger');
+            if (customSelectTrigger) {
+                customSelectTrigger.textContent = 'Maestro';
+            }
+        }
+        
+        // Agregar mensaje informativo
+        let infoMessage = document.getElementById('role-info-message');
+        if (!infoMessage) {
+            infoMessage = document.createElement('small');
+            infoMessage.id = 'role-info-message';
+            infoMessage.style.cssText = 'display: block; margin-top: 0.5rem; color: var(--muted-foreground); font-size: 0.875rem;';
+            infoMessage.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> Ya existe un administrador en el sistema. Solo puedes registrar maestros.';
+            
+            const roleField = document.getElementById('role-field');
+            if (roleField) {
+                roleField.appendChild(infoMessage);
+                // Inicializar el icono de Lucide
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }
+        }
+    } else {
+        // Desbloquear el campo
+        roleSelect.disabled = false;
+        
+        // Desbloquear también el custom select si existe
+        const customSelectWrapper = roleSelect.closest('.form-group')?.querySelector('.custom-select-wrapper');
+        if (customSelectWrapper) {
+            customSelectWrapper.classList.remove('disabled');
+            customSelectWrapper.style.pointerEvents = '';
+            customSelectWrapper.style.opacity = '';
+        }
+        
+        // Remover mensaje informativo si existe
+        const infoMessage = document.getElementById('role-info-message');
+        if (infoMessage) {
+            infoMessage.remove();
+        }
+    }
+}
+
+/**
  * Handles the user login process using Supabase Auth.
  * @param {string} email The user's email.
  * @param {string} password The user's password.
@@ -60,6 +156,11 @@ async function handleLogin(email, password) {
         };
         setUser(userProfile); // Update the global state
         
+        // Guardar en localStorage si este usuario es admin
+        if (userProfile.role === 'administrador') {
+            localStorage.setItem('system_has_admin', 'true');
+        }
+        
         // Mostrar toast de éxito
         window.showToast.success(`¡Bienvenido ${userProfile.nombre}!`);
         
@@ -78,13 +179,13 @@ async function handleLogin(email, password) {
  * @param {string} role The new user's role ('maestro' or 'administrador').
  */
 async function handleRegister(email, password, nombre, role) {
-    // --- THIS IS THE FIX ---
-    // Manually check if the name is provided during registration.
+    // Validar que el nombre esté presente
     if (!nombre || nombre.trim() === '') {
         showError('El nombre completo es obligatorio para el registro.');
-        return; // Stop the function if the name is missing
+        return;
     }
 
+    // Registrar usando Supabase directamente
     const { data, error } = await supabase.auth.signUp({
         email: email,
         password: password,
@@ -97,7 +198,12 @@ async function handleRegister(email, password, nombre, role) {
     });
 
     if (error) {
-        showError(error.message);
+        // Verificar si el error es porque ya existe un admin
+        if (error.message && error.message.includes('administrador')) {
+            showError('Ya existe un administrador en el sistema. Solo se permite un administrador por sistema.');
+        } else {
+            showError(error.message);
+        }
         return;
     }
 
@@ -191,7 +297,7 @@ export function setupAuthEventListeners() {
     }
 
     if (toggleAuthModeLink) {
-        toggleAuthModeLink.addEventListener('click', (e) => {
+        toggleAuthModeLink.addEventListener('click', async (e) => {
             e.preventDefault();
             isRegistering = !isRegistering;
             
@@ -215,9 +321,14 @@ export function setupAuthEventListeners() {
                 roleField.classList.remove('hidden', 'slide-up');
                 roleField.classList.add('slide-down');
                 
+                // Verificar si existe un administrador y actualizar el estado del campo de rol
+                const adminExists = await checkAdminExists();
+                
                 // Inicializar custom select para el campo de rol después de que sea visible
                 setTimeout(() => {
                     initializeCustomSelects('#role-field select:not([data-native])');
+                    // Aplicar el estado después de inicializar el custom select
+                    updateRoleFieldState(adminExists);
                 }, 350); // Esperar a que termine la animación
             } else {
                 // Ocultar campos con animación
