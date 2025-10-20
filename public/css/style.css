@@ -4132,7 +4132,30 @@ body.sidebar-open {
     }
     
     .user-info {
-        display: none; /* Ocultar info de usuario en pantallas muy pequeñas */
+        max-width: none;
+        min-width: auto;
+        padding: 0.25rem 0.4rem;
+        font-size: 0.7rem;
+        gap: 0.25rem;
+    }
+    
+    .user-info div {
+        display: none; /* Ocultar nombre y rol */
+    }
+    
+    .user-avatar {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .user-info #user-avatar-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .user-menu-chevron {
+        width: 12px;
+        height: 12px;
     }
     
     .main-content {

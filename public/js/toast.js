@@ -18,22 +18,17 @@ function isDarkMode() {
 
 /**
  * Reposiciona todos los toasts activos para que los nuevos estén arriba
- * El último toast en el DOM (más reciente) siempre debe estar arriba
+ * Empuja los toasts viejos hacia abajo
  */
 function repositionToasts() {
     const toastElements = document.querySelectorAll('.toastify');
-    const toastArray = Array.from(toastElements);
     
-    // El último elemento del array es el más reciente y debe estar arriba
-    // Los elementos más antiguos van hacia abajo
-    let currentTop = 15;
-    
-    // Iterar desde el final hacia el inicio
-    for (let i = toastArray.length - 1; i >= 0; i--) {
-        const element = toastArray[i];
-        element.style.top = currentTop + 'px';
-        currentTop += element.offsetHeight + TOAST_SPACING;
-    }
+    // Empujar todos los toasts existentes hacia abajo
+    toastElements.forEach((element, index) => {
+        const position = (toastElements.length - 1 - index);
+        const newTop = 15 + (position * (element.offsetHeight + TOAST_SPACING));
+        element.style.top = newTop + 'px';
+    });
 }
 
 /**
