@@ -99,6 +99,13 @@ export function renderAppLayout() {
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <main id="main-content" class="main-content"></main>
         </div>
+        <footer class="app-footer">
+            <div class="footer-content">
+                <span id="app-version">Cargando versión...</span>
+                <span class="footer-separator">•</span>
+                <span>© 2025 FIMAZ - UAS</span>
+            </div>
+        </footer>
     </div>`;
 }
 
@@ -421,6 +428,31 @@ export function showConfirmDialog(message) {
         };
         modalBackdrop.addEventListener('click', backdropHandler);
     });
+}
+
+/**
+ * Carga la información de versión del proyecto
+ */
+export async function loadAppVersion() {
+    try {
+        const response = await fetch('./version.json');
+        const versionData = await response.json();
+        
+        const versionElement = document.getElementById('app-version');
+        if (versionElement) {
+            versionElement.innerHTML = `
+                <span title="Versión: ${versionData.version}, Build: ${versionData.build}, Commit: ${versionData.commit}, Fecha: ${versionData.date}">
+                    v${versionData.version} (build ${versionData.build})
+                </span>
+            `;
+        }
+    } catch (error) {
+        console.warn('No se pudo cargar la versión:', error);
+        const versionElement = document.getElementById('app-version');
+        if (versionElement) {
+            versionElement.textContent = 'v1.0.0';
+        }
+    }
 }
 
 // Event listener para cerrar el modal

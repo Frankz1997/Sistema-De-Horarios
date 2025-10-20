@@ -3,7 +3,7 @@
  */
 import { state, setActiveView, loadData, setHorariosViewMode } from './state.js';
 import { checkSession, setupAuthEventListeners, setupLogoutListener } from './auth.js';
-import { renderAppLayout, renderLogin, renderSidebar, closeModal } from './ui.js';
+import { renderAppLayout, renderLogin, renderSidebar, closeModal, loadAppVersion } from './ui.js';
 import { api } from './api.js'; 
 import { renderDashboard } from './views/dashboard.js';
 import { renderMaestros, handleAddMaestro, handleEditMaestro, handleDeleteMaestro, handleMaestroFormSubmit } from './views/maestros.js';
@@ -133,6 +133,7 @@ export async function initializeApp() {
     await loadInitialData(); // Ahora esto funcionará
     renderSidebar(); // Y esto se ejecutará
     navigateTo('dashboard'); // Y esto también
+    loadAppVersion(); // Cargar versión en el footer
     
     // Remover la clase después de que terminen las animaciones (1 segundo)
     setTimeout(() => {

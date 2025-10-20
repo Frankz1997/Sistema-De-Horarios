@@ -3262,6 +3262,59 @@ body.sidebar-open {
     overflow: hidden;
 }
 
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.app-footer {
+    background-color: var(--card);
+    border-top: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+    margin-top: auto;
+}
+
+.footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.footer-separator {
+    color: var(--border-color);
+}
+
+#app-version {
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    color: var(--uas-blue);
+    cursor: help;
+}
+
+#app-version span {
+    transition: color 0.2s ease;
+}
+
+#app-version:hover span {
+    color: var(--uas-gold);
+}
+
+[data-theme="dark"] .app-footer {
+    background-color: var(--background);
+    border-top-color: rgba(255, 183, 27, 0.2);
+}
+
+[data-theme="dark"] #app-version {
+    color: var(--uas-gold);
+}
+
+[data-theme="dark"] #app-version:hover span {
+    color: white;
+}
+
 /* Media Queries - Tablets y móviles */
 @media (max-width: 768px) {
     
@@ -3567,6 +3620,16 @@ body.sidebar-open {
     
     th, td {
         padding: 0.4rem;
+    }
+    
+    /* Footer más compacto en móvil */
+    .app-footer {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .footer-content {
+        gap: 0.5rem;
     }
 }
 
