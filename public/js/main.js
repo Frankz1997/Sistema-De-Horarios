@@ -145,9 +145,27 @@ function setupAppEventListeners() {
         const target = e.target;
         const view = state.activeView;
 
+        // 📱 Manejar botón hamburguesa móvil
+        const mobileMenuToggle = target.closest('#mobile-menu-toggle');
+        if (mobileMenuToggle) {
+            toggleMobileSidebar();
+            return;
+        }
+
+        // 📱 Cerrar sidebar al hacer click en el overlay
+        const sidebarOverlay = target.closest('#sidebar-overlay');
+        if (sidebarOverlay) {
+            closeMobileSidebar();
+            return;
+        }
+
         const sidebarButton = target.closest('.sidebar-button');
         if (sidebarButton) {
             navigateTo(sidebarButton.dataset.view);
+            // 📱 Cerrar sidebar en móvil después de navegar
+            if (window.innerWidth <= 768) {
+                closeMobileSidebar();
+            }
             return;
         }
 
@@ -241,6 +259,29 @@ function setupAppEventListeners() {
     modalContainer.addEventListener('click', (e) => {
         if (e.target.id === 'cancel-btn') closeModal();
     });
+}
+
+// 📱 Funciones para manejar el sidebar móvil
+function toggleMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+        document.body.classList.toggle('sidebar-open');
+    }
+}
+
+function closeMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+        document.body.classList.remove('sidebar-open');
+    }
 }
 
 async function main() { // <--- 1. Hacer la función 'main' asíncrona

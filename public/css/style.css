@@ -546,6 +546,29 @@ body {
     background: var(--uas-gold-dark);
 }
 
+/* Estilos para custom-select deshabilitado */
+.custom-select.disabled .custom-select-button,
+.custom-select.disabled .custom-select-button:hover {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+    pointer-events: none;
+    border-color: #ced4da;
+    box-shadow: none;
+    transform: none;
+}
+
+.custom-select.disabled .custom-select-icon {
+    color: #6c757d;
+    opacity: 0.5;
+}
+
+.custom-select.disabled .custom-select-button:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+}
+
 .form-group select option {
     padding: 0.875rem 0.75rem;
     background-color: white;
@@ -3185,4 +3208,385 @@ body {
 
 [data-theme="dark"] .text-muted {
     color: var(--muted-foreground);
+}
+
+
+/* ==========================================================================
+   RESPONSIVE - MOBILE FIRST
+   ========================================================================== */
+
+/* Botón hamburguesa para móvil */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+    transform: scale(1.1);
+}
+
+.mobile-menu-toggle i,
+.mobile-menu-toggle svg {
+    width: 24px;
+    height: 24px;
+    stroke: white;
+}
+
+/* Overlay para cerrar sidebar en móvil */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Prevenir scroll cuando el sidebar móvil está abierto */
+body.sidebar-open {
+    overflow: hidden;
+}
+
+/* Media Queries - Tablets y móviles */
+@media (max-width: 768px) {
+    
+    /* Mostrar botón hamburguesa */
+    .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Navbar ajustes */
+    .navbar .container {
+        height: 3rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        gap: 0.5rem;
+    }
+    
+    .navbar-brand {
+        gap: 0.3rem;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .navbar-brand .brand-icon-wrapper {
+        width: 2.5rem;
+        height: 2.5rem;
+        padding: 0.3rem;
+    }
+    
+    .navbar-brand .brand-icon-wrapper i,
+    .navbar-brand .brand-icon-wrapper svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    
+    .navbar-brand-text h1 {
+        font-size: 0.9rem;
+    }
+    
+    .navbar-brand-text p {
+        font-size: 0.65rem;
+    }
+    
+    /* Ocultar elementos del navbar en móvil para ahorrar espacio */
+    .navbar-user {
+        gap: 0.3rem;
+    }
+    
+    .user-info {
+        max-width: 100px;
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    
+    .user-info i,
+    .user-info svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .user-info #user-name {
+        font-size: 0.75rem;
+    }
+    
+    .user-info #user-role {
+        font-size: 0.65rem;
+    }
+    
+    .theme-toggle-header {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .theme-toggle-header i,
+    .theme-toggle-header svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    #logout-button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    #logout-button .btn-text {
+        display: none; /* Ocultar texto "Salir", solo mostrar icono */
+    }
+    
+    /* Sidebar mobile - oculto por defecto */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -250px;
+        width: 250px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        padding-top: 3rem; /* Espacio para no cubrir el navbar */
+    }
+    
+    .sidebar.mobile-open {
+        left: 0;
+    }
+    
+    /* Ajustar main-layout para móvil */
+    .main-layout {
+        display: block;
+    }
+    
+    .main-content {
+        width: 100%;
+        padding: 1rem;
+        min-height: calc(100vh - 3rem);
+    }
+    
+    /* Cards más pequeños en móvil */
+    .card {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .card-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    /* Tablas responsivas */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 600px; /* Permitir scroll horizontal */
+        font-size: 0.85rem;
+    }
+    
+    th, td {
+        padding: 0.5rem;
+    }
+    
+    /* Botones más pequeños */
+    .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .btn i,
+    .btn svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    /* Modales más pequeños */
+    .modal-container {
+        width: 95%;
+        max-width: none;
+        margin: 1rem auto;
+        max-height: calc(100vh - 2rem);
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+        max-height: calc(100vh - 10rem);
+    }
+    
+    .modal-footer {
+        padding: 1rem;
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+    }
+    
+    /* Grid responsivo */
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .col-2 {
+        grid-column: span 1;
+    }
+    
+    /* Stats cards en columna */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Vista de horarios más compacta */
+    .horario-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .horario-filters {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .calendar-view {
+        font-size: 0.75rem;
+    }
+    
+    .calendar-header {
+        padding: 0.5rem;
+    }
+    
+    .calendar-time-slot {
+        min-height: 50px;
+        font-size: 0.7rem;
+    }
+    
+    /* View header más compacto */
+    .view-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .view-header .btn {
+        width: 100%;
+    }
+    
+    /* Form groups apilados */
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    /* Login view ajustes */
+    #login-view {
+        padding: 1rem;
+    }
+    
+    .login-card {
+        padding: 1.5rem;
+        margin: 1rem auto;
+    }
+    
+    .login-card h2 {
+        font-size: 1.3rem;
+    }
+    
+    /* Dashboard quick actions */
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Media Query para móviles muy pequeños */
+@media (max-width: 480px) {
+    
+    .navbar-brand-text p {
+        display: none; /* Ocultar subtítulo en pantallas muy pequeñas */
+    }
+    
+    .navbar-brand-text h1 {
+        font-size: 0.85rem;
+    }
+    
+    .user-info {
+        display: none; /* Ocultar info de usuario en pantallas muy pequeñas */
+    }
+    
+    .main-content {
+        padding: 0.75rem;
+    }
+    
+    .card {
+        padding: 0.75rem;
+    }
+    
+    .modal-container {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        max-height: 100vh;
+    }
+    
+    table {
+        font-size: 0.75rem;
+    }
+    
+    th, td {
+        padding: 0.4rem;
+    }
+}
+
+/* Media Query para tablets en landscape */
+@media (min-width: 769px) and (max-width: 1024px) {
+    
+    .sidebar {
+        width: 180px;
+    }
+    
+    .sidebar-button {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .main-content {
+        padding: 1.5rem;
+    }
+    
+    .grid.col-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }

@@ -132,6 +132,11 @@ export class CustomSelect {
     }
 
     toggle() {
+        // No permitir toggle si está deshabilitado
+        if (this.customSelect.classList.contains('disabled') || this.originalSelect.disabled) {
+            return;
+        }
+        
         if (this.isOpen) {
             this.close();
         } else {
@@ -140,6 +145,11 @@ export class CustomSelect {
     }
 
     open() {
+        // No permitir abrir si está deshabilitado
+        if (this.customSelect.classList.contains('disabled') || this.originalSelect.disabled) {
+            return;
+        }
+        
         // Cerrar otros dropdowns abiertos
         document.querySelectorAll('.custom-select.open').forEach(select => {
             if (select !== this.customSelect) {

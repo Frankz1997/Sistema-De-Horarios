@@ -69,9 +69,12 @@ export function renderAppLayout() {
     <div id="app-view" class="view">
         <nav class="navbar">
             <div class="container">
+                <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Abrir menú">
+                    <i data-lucide="menu"></i>
+                </button>
                 <div class="navbar-brand">
                     <a href="#" id="brand-logo-link" class="brand-icon-wrapper" title="Ir al inicio">${logoHTML}</a>
-                    <div>
+                    <div class="navbar-brand-text">
                         <h1>Sistema de Horarios</h1>
                         <p>Facultad de Informática Mazatlán - UAS</p>
                     </div>
@@ -87,12 +90,13 @@ export function renderAppLayout() {
                             <p id="user-role" class="capitalize">${state.user.role}</p>
                         </div>
                     </div>
-                    <button id="logout-button" class="btn btn-ghost"><i data-lucide="log-out"></i> Salir</button>
+                    <button id="logout-button" class="btn btn-ghost"><i data-lucide="log-out"></i> <span class="btn-text">Salir</span></button>
                 </div>
             </div>
         </nav>
         <div class="main-layout">
-            <aside class="sidebar"><div class="sidebar-menu"></div></aside>
+            <aside class="sidebar" id="sidebar"><div class="sidebar-menu"></div></aside>
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <main id="main-content" class="main-content"></main>
         </div>
     </div>`;

@@ -19,6 +19,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // This variable keeps track of whether the user is on the login or register form.
 let isRegistering = false;
 
+// Caché en memoria para la verificación de admin (más rápido que localStorage)
+let adminExistsCache = null;
+let adminCacheTimestamp = null;
+const CACHE_DURATION = 30000; // 30 segundos
+
 /**
  * Displays an error message using toast notification.
  * @param {string} message The error message to display.
@@ -41,27 +46,42 @@ function showError(message) {
  */
 async function checkAdminExists() {
     try {
+        // 🚀 Verificar caché en memoria primero (súper rápido)
+        const now = Date.now();
+        if (adminExistsCache !== null && adminCacheTimestamp && (now - adminCacheTimestamp < CACHE_DURATION)) {
+            console.log('⚡ Usando caché en memoria:', adminExistsCache);
+            return adminExistsCache;
+        }
+        
+        console.log('🔍 Consultando base de datos...');
+        
         // Consultar la tabla usuarios para ver si existe un administrador
         const { data, error } = await supabase
             .from('usuarios')
-            .select('id, role')
-            .eq('role', 'administrador')
-            .limit(1);
+            .select('id, role, email, nombre')
+            .eq('role', 'administrador');
+        
+        console.log('📊 Respuesta de Supabase:', { data, error });
         
         if (error) {
-            console.error('Error al verificar administrador:', error);
-            // Si la tabla no existe aún, retornar false
+            console.error('❌ Error al verificar administrador:', error);
             return false;
         }
         
         const adminExists = data && data.length > 0;
+        console.log('✅ Resultado: Admin existe =', adminExists);
+        console.log('📝 Datos de admins encontrados:', data);
         
-        // Guardar en localStorage para cachear el resultado
+        // Guardar en caché en memoria (más rápido para próximas llamadas)
+        adminExistsCache = adminExists;
+        adminCacheTimestamp = now;
+        
+        // Guardar también en localStorage como respaldo
         localStorage.setItem('system_has_admin', adminExists ? 'true' : 'false');
         
         return adminExists;
     } catch (error) {
-        console.error('Error al verificar administrador:', error);
+        console.error('💥 Excepción al verificar administrador:', error);
         return false;
     }
 }
@@ -80,16 +100,14 @@ function updateRoleFieldState(adminExists) {
         roleSelect.disabled = true;
         
         // Bloquear también el custom select si existe
-        const customSelectWrapper = roleSelect.closest('.form-group')?.querySelector('.custom-select-wrapper');
-        if (customSelectWrapper) {
-            customSelectWrapper.classList.add('disabled');
-            customSelectWrapper.style.pointerEvents = 'none';
-            customSelectWrapper.style.opacity = '0.6';
+        const customSelect = roleSelect.nextElementSibling;
+        if (customSelect && customSelect.classList.contains('custom-select')) {
+            customSelect.classList.add('disabled');
             
             // Actualizar el texto visible del custom select
-            const customSelectTrigger = customSelectWrapper.querySelector('.custom-select-trigger');
-            if (customSelectTrigger) {
-                customSelectTrigger.textContent = 'Maestro';
+            const customSelectValue = customSelect.querySelector('.custom-select-value');
+            if (customSelectValue) {
+                customSelectValue.textContent = 'Maestro';
             }
         }
         
@@ -99,7 +117,7 @@ function updateRoleFieldState(adminExists) {
             infoMessage = document.createElement('small');
             infoMessage.id = 'role-info-message';
             infoMessage.style.cssText = 'display: block; margin-top: 0.5rem; color: var(--muted-foreground); font-size: 0.875rem;';
-            infoMessage.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> Ya existe un administrador en el sistema. Solo puedes registrar maestros.';
+            infoMessage.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> El sistema ya tiene un administrador. Solo puedes registrarte como maestro.';
             
             const roleField = document.getElementById('role-field');
             if (roleField) {
@@ -115,11 +133,9 @@ function updateRoleFieldState(adminExists) {
         roleSelect.disabled = false;
         
         // Desbloquear también el custom select si existe
-        const customSelectWrapper = roleSelect.closest('.form-group')?.querySelector('.custom-select-wrapper');
-        if (customSelectWrapper) {
-            customSelectWrapper.classList.remove('disabled');
-            customSelectWrapper.style.pointerEvents = '';
-            customSelectWrapper.style.opacity = '';
+        const customSelect = roleSelect.nextElementSibling;
+        if (customSelect && customSelect.classList.contains('custom-select')) {
+            customSelect.classList.remove('disabled');
         }
         
         // Remover mensaje informativo si existe
@@ -185,7 +201,30 @@ async function handleRegister(email, password, nombre, role) {
         return;
     }
 
+    // ⚠️ VALIDACIÓN IMPORTANTE: Si el rol es administrador, verificar que no exista otro
+    if (role === 'administrador') {
+        console.log('🔒 Verificando si existe un administrador...');
+        localStorage.setItem('debug_last_check', 'Iniciando verificación de admin para: ' + email);
+        
+        const adminExists = await checkAdminExists();
+        
+        console.log('🔒 Administrador existe:', adminExists);
+        localStorage.setItem('debug_admin_exists', adminExists.toString());
+        localStorage.setItem('debug_last_check', 'Verificación completada. Admin existe: ' + adminExists);
+        
+        if (adminExists) {
+            console.log('❌ BLOQUEANDO registro - Ya existe un admin');
+            localStorage.setItem('debug_last_check', 'BLOQUEADO - Ya existe admin');
+            showError('Ya existe un administrador en el sistema. Solo se permite un administrador por sistema.');
+            return; // DETENER el registro
+        }
+        
+        console.log('✅ No hay admin - Permitiendo registro');
+        localStorage.setItem('debug_last_check', 'Permitido - No hay admin existente');
+    }
+
     // Registrar usando Supabase directamente
+    console.log('📝 Procediendo con registro en Supabase...');
     const { data, error } = await supabase.auth.signUp({
         email: email,
         password: password,
@@ -198,6 +237,8 @@ async function handleRegister(email, password, nombre, role) {
     });
 
     if (error) {
+        console.error('❌ Error en registro:', error);
+        localStorage.setItem('debug_last_error', error.message);
         // Verificar si el error es porque ya existe un admin
         if (error.message && error.message.includes('administrador')) {
             showError('Ya existe un administrador en el sistema. Solo se permite un administrador por sistema.');
@@ -208,6 +249,8 @@ async function handleRegister(email, password, nombre, role) {
     }
 
     if (data.user) {
+        console.log('✅ Usuario registrado exitosamente');
+        localStorage.setItem('debug_last_check', 'Usuario registrado: ' + email + ' como ' + role);
         window.showToast.success('¡Registro exitoso! Por favor, inicia sesión con tus nuevas credenciales.');
         setTimeout(() => {
             window.location.reload();
@@ -252,10 +295,14 @@ async function handleLogout() {
 }
 
 /**
- * Checks if there is an active session stored in the browser.
- * @returns {boolean} True if a session exists, false otherwise.
+ * Checks for an existing Supabase auth session. If found, restores the user state.
+ * @returns {Promise<boolean>} True if a session exists, false otherwise.
  */
 export async function checkSession() {
+    // 🚀 PRE-CARGAR verificación de admin en paralelo (no bloqueante)
+    // Esto hace que el caché esté listo cuando el usuario haga clic en "Regístrate"
+    checkAdminExists().catch(err => console.warn('⚠️ Error precargando admin check:', err));
+    
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
         // If a session is found, create the user profile and update the state.
@@ -315,21 +362,22 @@ export function setupAuthEventListeners() {
             toggleAuthModeLink.textContent = isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
             
             if (isRegistering) {
+                // ⚡ Verificar admin INMEDIATAMENTE antes de mostrar el formulario
+                const adminExists = await checkAdminExists();
+                
                 // Mostrar campos con animación
                 registerFields.classList.remove('hidden', 'slide-up');
                 registerFields.classList.add('slide-down');
                 roleField.classList.remove('hidden', 'slide-up');
                 roleField.classList.add('slide-down');
                 
-                // Verificar si existe un administrador y actualizar el estado del campo de rol
-                const adminExists = await checkAdminExists();
-                
-                // Inicializar custom select para el campo de rol después de que sea visible
-                setTimeout(() => {
+                // Inicializar custom select inmediatamente (sin setTimeout)
+                // Esperar un micro-delay para que el DOM se actualice
+                requestAnimationFrame(() => {
                     initializeCustomSelects('#role-field select:not([data-native])');
-                    // Aplicar el estado después de inicializar el custom select
+                    // Aplicar el estado bloqueado INMEDIATAMENTE
                     updateRoleFieldState(adminExists);
-                }, 350); // Esperar a que termine la animación
+                });
             } else {
                 // Ocultar campos con animación
                 registerFields.classList.remove('slide-down');
