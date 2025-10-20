@@ -1,0 +1,265 @@
+/**
+ * Punto de entrada principal del frontend
+ */
+import { state, setActiveView, loadData, setHorariosViewMode } from './state.js';
+import { checkSession, setupAuthEventListeners, setupLogoutListener } from './auth.js';
+import { renderAppLayout, renderLogin, renderSidebar, closeModal } from './ui.js';
+import { api } from './api.js'; 
+import { renderDashboard } from './views/dashboard.js';
+import { renderMaestros, handleAddMaestro, handleEditMaestro, handleDeleteMaestro, handleMaestroFormSubmit } from './views/maestros.js';
+import { renderAsignaturas, handleAddAsignatura, handleEditAsignatura, handleDeleteAsignatura, handleAsignaturaFormSubmit } from './views/asignaturas.js';
+import { renderAulas, handleAddAula, handleEditAula, handleDeleteAula, handleAulaFormSubmit } from './views/aulas.js';
+import { renderHorarios, renderHorariosContent, handleAddHorario, handleEditHorario, handleDeleteHorario, handleHorarioFormSubmit } from './views/horarios.js';
+import { renderReportes, handleReportesClick, handleReportesChange } from './views/reportes.js';
+import { renderConfiguraciones, handleGuardarConfiguracion, handleResetConfiguracion, applyTheme, setupThemeToggle, setupHeaderThemeToggle, setupSettingsDropdowns, initConfiguracionesListeners } from './views/configuraciones.js';
+import { initializeCustomSelects } from './components/custom-select.js';
+
+const appRoot = document.getElementById('app-root');
+
+const viewRenderers = {
+    dashboard: renderDashboard,
+    maestros: renderMaestros,
+    asignaturas: renderAsignaturas,
+    aulas: renderAulas,
+    horarios: renderHorarios,
+    reportes: renderReportes,
+    configuraciones: renderConfiguraciones,
+};
+
+export function renderCurrentView() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return;
+    
+    const renderer = viewRenderers[state.activeView];
+    if (renderer) {
+        mainContent.innerHTML = renderer();
+        lucide.createIcons();
+        
+        // Inicializar custom selects en la vista
+        initializeCustomSelects('select:not([data-native])');
+        
+        // Configurar dropdowns si estamos en la vista de configuraciones
+        if (state.activeView === 'configuraciones') {
+            setupSettingsDropdowns();
+            initConfiguracionesListeners(); // Inicializar listeners del logo
+        }
+    }
+}
+
+export function navigateTo(viewId) {
+    setActiveView(viewId);
+    renderCurrentView();
+    renderSidebar();
+}
+
+// Función para actualizar solo el contenido de horarios sin tocar el header
+function updateHorariosContent() {
+    const contentContainer = document.getElementById('horarios-content-container');
+    if (contentContainer) {
+        // Agregar clase de animación
+        contentContainer.style.opacity = '0';
+        contentContainer.style.transform = 'translateY(10px)';
+        
+        setTimeout(() => {
+            contentContainer.innerHTML = renderHorariosContent();
+            lucide.createIcons();
+            initializeCustomSelects('select:not([data-native])');
+            
+            // Actualizar los botones del toggle
+            document.getElementById('view-calendario-btn').classList.toggle('active', state.horariosViewMode === 'calendario');
+            document.getElementById('view-lista-btn').classList.toggle('active', state.horariosViewMode === 'lista');
+            
+            // Animar la entrada
+            contentContainer.style.opacity = '1';
+            contentContainer.style.transform = 'translateY(0)';
+        }, 150);
+    }
+}
+
+export async function loadInitialData() {
+    const [maestros, asignaturas, aulas, horarios, configuraciones] = await Promise.all([
+        api.maestros.getAll(),
+        api.asignaturas.getAll(),
+        api.aulas.getAll(),
+        api.horarios.getAll(),
+        api.configuracion.getAll(),
+    ]);
+    loadData('maestros', maestros);
+    loadData('asignaturas', asignaturas);
+    loadData('aulas', aulas);
+    loadData('horarios', horarios);
+    
+    // Procesar configuraciones en un objeto más accesible
+    const configObj = {};
+    configuraciones.forEach(config => {
+        configObj[config.clave] = config.valor;
+    });
+    state.configuracion = configObj;
+    
+    // Aplicar el tema guardado
+    const savedTheme = configObj.interfaz?.tema || 'light';
+    applyTheme(savedTheme);
+    
+    // Actualizar el logo en el navbar si existe
+    const logoUrl = configObj.institucion?.logo_url;
+    if (logoUrl) {
+        const brandIconWrapper = document.querySelector('.navbar-brand .brand-icon-wrapper');
+        if (brandIconWrapper) {
+            brandIconWrapper.innerHTML = `<img src="${logoUrl}" alt="Logo institucional" class="logo-institucional">`;
+        }
+    }
+}
+
+// Configurar listener para el logo (redirige al dashboard)
+function setupBrandLogoListener() {
+    const brandLogo = document.getElementById('brand-logo-link');
+    if (brandLogo) {
+        brandLogo.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateTo('dashboard');
+        });
+    }
+}
+
+export async function initializeApp() {
+    // Agregar clase para animaciones de carga inicial
+    document.body.classList.add('initial-load');
+    
+    appRoot.innerHTML = renderAppLayout();
+    setupAppEventListeners();
+    setupLogoutListener(); // Configurar listener para el botón de cerrar sesión
+    setupHeaderThemeToggle(); // Configurar el toggle de tema en el header
+    setupBrandLogoListener(); // Configurar listener para el logo
+    await loadInitialData(); // Ahora esto funcionará
+    renderSidebar(); // Y esto se ejecutará
+    navigateTo('dashboard'); // Y esto también
+    
+    // Remover la clase después de que terminen las animaciones (1 segundo)
+    setTimeout(() => {
+        document.body.classList.remove('initial-load');
+    }, 1000);
+}
+
+function setupAppEventListeners() {
+    appRoot.addEventListener('click', (e) => {
+        const target = e.target;
+        const view = state.activeView;
+
+        const sidebarButton = target.closest('.sidebar-button');
+        if (sidebarButton) {
+            navigateTo(sidebarButton.dataset.view);
+            return;
+        }
+
+        // Manejar botones de accesos rápidos en el dashboard
+        const quickActionBtn = target.closest('[data-quick-action]');
+        if (quickActionBtn) {
+            const action = quickActionBtn.dataset.quickAction;
+            if (action === 'horarios') {
+                // Ir a la vista de horarios en modo calendario
+                setHorariosViewMode('calendario');
+                navigateTo('horarios');
+            } else if (action === 'maestros') {
+                navigateTo('maestros');
+            } else if (action === 'asignaturas') {
+                navigateTo('asignaturas');
+            }
+            return;
+        }
+
+        // Manejar click en tarjetas de estadísticas del dashboard
+        const statCard = target.closest('[data-card-action]');
+        if (statCard) {
+            const action = statCard.dataset.cardAction;
+            if (action === 'horarios') {
+                // Ir a la vista de horarios en modo calendario
+                setHorariosViewMode('calendario');
+                navigateTo('horarios');
+            } else {
+                navigateTo(action);
+            }
+            return;
+        }
+
+        if (view === 'maestros') {
+            if (target.id === 'add-maestro-btn') handleAddMaestro();
+            if (target.closest('.edit-maestro-btn')) handleEditMaestro(target.closest('.edit-maestro-btn').dataset.id);
+            if (target.closest('.delete-maestro-btn')) handleDeleteMaestro(target.closest('.delete-maestro-btn').dataset.id);
+        }
+        else if (view === 'asignaturas') {
+            if (target.id === 'add-asignatura-btn') handleAddAsignatura();
+            if (target.closest('.edit-asignatura-btn')) handleEditAsignatura(target.closest('.edit-asignatura-btn').dataset.id);
+            if (target.closest('.delete-asignatura-btn')) handleDeleteAsignatura(target.closest('.delete-asignatura-btn').dataset.id);
+        }
+        else if (view === 'aulas') {
+            if (target.id === 'add-aula-btn') handleAddAula();
+            if (target.closest('.edit-aula-btn')) handleEditAula(target.closest('.edit-aula-btn').dataset.id);
+            if (target.closest('.delete-aula-btn')) handleDeleteAula(target.closest('.delete-aula-btn').dataset.id);
+        }
+        else if (view === 'horarios') {
+            if (target.id === 'view-calendario-btn') { 
+                setHorariosViewMode('calendario'); 
+                updateHorariosContent();
+            }
+            if (target.id === 'view-lista-btn') { 
+                setHorariosViewMode('lista'); 
+                updateHorariosContent();
+            }
+            if (target.id === 'add-horario-btn') handleAddHorario();
+            if (target.closest('.edit-horario-btn')) handleEditHorario(target.closest('.edit-horario-btn').dataset.id);
+            if (target.closest('.delete-horario-btn')) handleDeleteHorario(target.closest('.delete-horario-btn').dataset.id);
+        }
+        else if (view === 'reportes') {
+            handleReportesClick(e);
+        }
+        else if (view === 'configuraciones') {
+            if (target.id === 'btn-guardar-config') handleGuardarConfiguracion();
+            if (target.id === 'btn-cancelar-config') {
+                // Recargar la vista de configuraciones para resetear los valores
+                renderCurrentView();
+            }
+            if (target.id === 'btn-reset-config') handleResetConfiguracion();
+        }
+    });
+
+    appRoot.addEventListener('change', (e) => {
+        const view = state.activeView;
+        if (view === 'reportes') {
+            handleReportesChange(e);
+        }
+    });
+
+    const modalContainer = document.getElementById('modal-container');
+    modalContainer.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (e.target.id === 'maestro-form') handleMaestroFormSubmit(e);
+        if (e.target.id === 'asignatura-form') handleAsignaturaFormSubmit(e);
+        if (e.target.id === 'aula-form') handleAulaFormSubmit(e);
+        if (e.target.id === 'horario-form') handleHorarioFormSubmit(e);
+    });
+
+    modalContainer.addEventListener('click', (e) => {
+        if (e.target.id === 'cancel-btn') closeModal();
+    });
+}
+
+async function main() { // <--- 1. Hacer la función 'main' asíncrona
+    // Aplicar tema guardado antes de mostrar cualquier cosa
+    const savedTheme = localStorage.getItem('user-theme-preference');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    
+    // 2. Esperar a que checkSession termine y devuelva true o false
+    if (await checkSession()) { 
+        initializeApp();
+    } else {
+        appRoot.innerHTML = renderLogin();
+        lucide.createIcons();
+        initializeCustomSelects('#login-view select:not([data-native])');
+        setupAuthEventListeners();
+    }
+}
+
+// Ejecutar la aplicación
+main();

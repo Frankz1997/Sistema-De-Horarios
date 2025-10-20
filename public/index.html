@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Horarios - FIMAZ</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
+<body>
+
+    <div id="app-root"></div>
+
+    <div id="modal-backdrop" class="modal-backdrop hidden">
+        <div id="modal-container" class="modal-container"></div>
+    </div>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Inicializamos los íconos una vez que se cargue la página
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+        });
+    </script>
+    
+    <!-- Toastify JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <!-- Toast Helper - Sistema de notificaciones -->
+    <script type="module" src="./js/toast.js"></script>
+    
+    <!-- Main App -->
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
