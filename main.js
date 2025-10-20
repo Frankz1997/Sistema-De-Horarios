@@ -15,11 +15,22 @@ const app = new Hono();
 // CORS global
 app.use('*', cors());
 
+// Get environment variables
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+// Validate environment variables
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ Error: Variables de entorno faltantes');
+  console.error('SUPABASE_URL:', SUPABASE_URL ? '✅ Configurada' : '❌ Faltante');
+  console.error('SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? '✅ Configurada' : '❌ Faltante');
+  throw new Error('Por favor configura SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en las variables de entorno de Deno Deploy');
+}
+
+console.log('✅ Variables de entorno cargadas correctamente');
+
 // Supabase client
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL'),
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // ============================================
 // API ROUTES (from server/api.js)

@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --allow-env --watch main.js",
+    "start": "deno run --allow-net --allow-read --allow-env main.js"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": false
+  }
+}
