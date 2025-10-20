@@ -120,7 +120,7 @@ Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 
 ## 👤 Autor
 
-**Francisco Barsa**
+**Frankz**
 - GitHub: [@Frankz1997](https://github.com/Frankz1997)
 
 ## 🌟 Soporte
