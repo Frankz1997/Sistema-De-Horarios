@@ -133,6 +133,13 @@ button {
 html {
     overflow-x: hidden;
     width: 100%;
+    /* Ocultar scrollbar pero mantener funcionalidad */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE y Edge */
+}
+
+html::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 body {
@@ -145,6 +152,13 @@ body {
     overflow-x: hidden; /* Evitar scroll horizontal */
     width: 100%;
     max-width: 100vw;
+    /* Ocultar scrollbar pero mantener funcionalidad */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE y Edge */
+}
+
+body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 #app-root {
@@ -751,6 +765,13 @@ body {
 .main-content {
     flex: 1;
     padding: 1.5rem;
+    /* Ocultar scrollbar pero mantener funcionalidad */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE y Edge */
+}
+
+.main-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 /* Animación solo en carga inicial */
@@ -3517,25 +3538,24 @@ body.sidebar-open {
         height: 16px;
     }
     
-    /* Modales optimizados para móvil */
+    /* Modales optimizados para móvil - MÁS SIMPLES */
     .modal-backdrop {
-        padding: 0;
+        padding: 0.5rem;
+        align-items: flex-start;
+        padding-top: 2rem;
     }
     
     .modal-container {
-        width: 100%;
-        max-width: 100%;
-        margin: 0;
-        max-height: 100vh;
-        height: 100vh;
-        border-radius: 0;
-        display: flex;
-        flex-direction: column;
+        width: 95%;
+        max-width: 95%;
+        max-height: 85vh;
+        margin: 0 auto;
+        border-radius: 0.5rem;
+        overflow: hidden;
     }
     
     .modal-header {
-        padding: 0.75rem 1rem;
-        flex-shrink: 0;
+        padding: 0.75rem;
     }
     
     .modal-header h2 {
@@ -3543,11 +3563,17 @@ body.sidebar-open {
     }
     
     .modal-body {
-        padding: 0.75rem 1rem;
-        max-height: none;
-        flex: 1;
+        padding: 0.75rem;
+        max-height: 60vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        /* Ocultar scrollbar pero mantener funcionalidad */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE y Edge */
+    }
+    
+    .modal-body::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
     }
     
     .modal-body .form-group {
@@ -3567,17 +3593,14 @@ body.sidebar-open {
     }
     
     .modal-footer {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem;
         flex-direction: column-reverse;
         gap: 0.5rem;
-        flex-shrink: 0;
-        border-top: 1px solid var(--border-color);
-        background-color: var(--background);
     }
     
     .modal-footer .btn {
         width: 100%;
-        padding: 0.75rem;
+        padding: 0.65rem;
         font-size: 0.9rem;
     }
     
