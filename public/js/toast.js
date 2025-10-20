@@ -3,12 +3,50 @@
  * Proporciona notificaciones visuales con iconos y bordes de color
  */
 
+// Array para llevar control de los toasts activos
+let activeToasts = [];
+const MAX_TOASTS = 2;
+const TOAST_SPACING = 10; // Espaciado entre toasts en px
+
 /**
  * Detecta si el tema oscuro está activo
  * @returns {boolean} True si el tema oscuro está activo
  */
 function isDarkMode() {
     return document.documentElement.getAttribute('data-theme') === 'dark';
+}
+
+/**
+ * Reposiciona todos los toasts activos para que los nuevos estén arriba
+ * El último toast en el DOM (más reciente) siempre debe estar arriba
+ */
+function repositionToasts() {
+    const toastElements = document.querySelectorAll('.toastify');
+    const toastArray = Array.from(toastElements);
+    
+    // El último elemento del array es el más reciente y debe estar arriba
+    // Los elementos más antiguos van hacia abajo
+    let currentTop = 15;
+    
+    // Iterar desde el final hacia el inicio
+    for (let i = toastArray.length - 1; i >= 0; i--) {
+        const element = toastArray[i];
+        element.style.top = currentTop + 'px';
+        currentTop += element.offsetHeight + TOAST_SPACING;
+    }
+}
+
+/**
+ * Gestiona el límite de toasts activos
+ */
+function manageToastLimit() {
+    // Eliminar toasts excedentes inmediatamente
+    while (activeToasts.length >= MAX_TOASTS) {
+        const oldestToast = activeToasts.shift();
+        if (oldestToast && oldestToast.hideToast) {
+            oldestToast.hideToast();
+        }
+    }
 }
 
 /**
@@ -25,11 +63,41 @@ function getToastStyles(borderColor) {
         borderRadius: "8px",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
         padding: "12px 14px",
+        paddingRight: "40px", // Espacio para el botón de cerrar
         boxShadow: darkMode ? "0 8px 24px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.15)",
         minWidth: "300px",
         display: "flex",
         alignItems: "center",
+        position: "relative",
     };
+}
+
+/**
+ * Obtiene los estilos del botón de cerrar según el tema
+ * @returns {string} Estilos CSS inline para el botón de cerrar
+ */
+function getCloseButtonStyles() {
+    const darkMode = isDarkMode();
+    return `
+        position: absolute !important;
+        right: 8px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: transparent !important;
+        border: none !important;
+        color: ${darkMode ? '#94a3b8' : '#666'} !important;
+        font-size: 20px !important;
+        cursor: pointer !important;
+        padding: 4px !important;
+        line-height: 1 !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        opacity: 0.7 !important;
+        transition: opacity 0.2s ease !important;
+    `.trim();
 }
 
 /**
@@ -37,6 +105,8 @@ function getToastStyles(borderColor) {
  * @param {string} message - El mensaje a mostrar
  */
 function showSuccessToast(message) {
+    manageToastLimit();
+    
     const container = document.createElement('div');
     container.style.cssText = 'display:flex;align-items:center;gap:10px;height:100%;';
     
@@ -51,15 +121,63 @@ function showSuccessToast(message) {
     container.appendChild(icon);
     container.appendChild(text);
     
-    Toastify({
+    // Empujar toasts existentes hacia abajo ANTES de mostrar el nuevo
+    const existingToasts = document.querySelectorAll('.toastify');
+    existingToasts.forEach((element) => {
+        const currentTop = parseInt(element.style.top) || 15;
+        // Estimar altura de 60px para el nuevo toast
+        element.style.top = (currentTop + 60 + TOAST_SPACING) + 'px';
+    });
+    
+    const toast = Toastify({
         node: container,
         duration: 3000,
         close: true,
         gravity: "top",
         position: "right",
         stopOnFocus: true,
-        style: getToastStyles("#28a745")
-    }).showToast();
+        offset: {
+            x: 15,
+            y: 15  // Siempre comenzar en la posición superior
+        },
+        style: getToastStyles("#28a745"),
+        onClick: function() {},
+        callback: function() {
+            // Remover del array cuando se cierre
+            const index = activeToasts.indexOf(toast);
+            if (index > -1) {
+                activeToasts.splice(index, 1);
+            }
+            // Reposicionar toasts restantes con la altura correcta
+            setTimeout(repositionToasts, 100);
+        }
+    });
+    
+    toast.showToast();
+    activeToasts.push(toast);
+    
+    // Ajustar posiciones con alturas reales después del render
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            repositionToasts();
+            
+            // Aplicar estilos al botón de cerrar
+            const toastElements = document.querySelectorAll('.toastify');
+            const toastElement = toastElements[toastElements.length - 1];
+            if (toastElement) {
+                const closeButton = toastElement.querySelector('.toast-close');
+                if (closeButton) {
+                    closeButton.style.cssText = getCloseButtonStyles();
+                    closeButton.addEventListener('mouseenter', () => {
+                        closeButton.style.opacity = '1';
+                    });
+                    closeButton.addEventListener('mouseleave', () => {
+                        closeButton.style.opacity = '0.7';
+                    });
+                }
+            }
+        });
+    });
 }
 
 /**
@@ -68,6 +186,8 @@ function showSuccessToast(message) {
  * @param {object} options - Opciones adicionales (duration)
  */
 function showErrorToast(message, options = {}) {
+    manageToastLimit();
+    
     const container = document.createElement('div');
     container.style.cssText = 'display:flex;align-items:center;gap:10px;height:100%;';
     
@@ -82,15 +202,63 @@ function showErrorToast(message, options = {}) {
     container.appendChild(icon);
     container.appendChild(text);
     
-    Toastify({
+    // Empujar toasts existentes hacia abajo ANTES de mostrar el nuevo
+    const existingToasts = document.querySelectorAll('.toastify');
+    existingToasts.forEach((element) => {
+        const currentTop = parseInt(element.style.top) || 15;
+        // Estimar altura de 60px para el nuevo toast
+        element.style.top = (currentTop + 60 + TOAST_SPACING) + 'px';
+    });
+    
+    const toast = Toastify({
         node: container,
         duration: options.duration || 3000,
         close: true,
         gravity: "top",
         position: "right",
         stopOnFocus: true,
-        style: getToastStyles("#dc3545")
-    }).showToast();
+        offset: {
+            x: 15,
+            y: 15  // Siempre comenzar en la posición superior
+        },
+        style: getToastStyles("#dc3545"),
+        onClick: function() {},
+        callback: function() {
+            // Remover del array cuando se cierre
+            const index = activeToasts.indexOf(toast);
+            if (index > -1) {
+                activeToasts.splice(index, 1);
+            }
+            // Reposicionar toasts restantes con la altura correcta
+            setTimeout(repositionToasts, 100);
+        }
+    });
+    
+    toast.showToast();
+    activeToasts.push(toast);
+    
+    // Ajustar posiciones con alturas reales después del render
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            repositionToasts();
+            
+            // Aplicar estilos al botón de cerrar
+            const toastElements = document.querySelectorAll('.toastify');
+            const toastElement = toastElements[toastElements.length - 1];
+            if (toastElement) {
+                const closeButton = toastElement.querySelector('.toast-close');
+                if (closeButton) {
+                    closeButton.style.cssText = getCloseButtonStyles();
+                    closeButton.addEventListener('mouseenter', () => {
+                        closeButton.style.opacity = '1';
+                    });
+                    closeButton.addEventListener('mouseleave', () => {
+                        closeButton.style.opacity = '0.7';
+                    });
+                }
+            }
+        });
+    });
 }
 
 /**
@@ -98,6 +266,8 @@ function showErrorToast(message, options = {}) {
  * @param {string} message - El mensaje a mostrar
  */
 function showInfoToast(message) {
+    manageToastLimit();
+    
     const container = document.createElement('div');
     container.style.cssText = 'display:flex;align-items:center;gap:10px;height:100%;';
     
@@ -112,15 +282,63 @@ function showInfoToast(message) {
     container.appendChild(icon);
     container.appendChild(text);
     
-    Toastify({
+    // Empujar toasts existentes hacia abajo ANTES de mostrar el nuevo
+    const existingToasts = document.querySelectorAll('.toastify');
+    existingToasts.forEach((element) => {
+        const currentTop = parseInt(element.style.top) || 15;
+        // Estimar altura de 60px para el nuevo toast
+        element.style.top = (currentTop + 60 + TOAST_SPACING) + 'px';
+    });
+    
+    const toast = Toastify({
         node: container,
         duration: 3000,
         close: true,
         gravity: "top",
         position: "right",
         stopOnFocus: true,
-        style: getToastStyles("#17a2b8")
-    }).showToast();
+        offset: {
+            x: 15,
+            y: 15  // Siempre comenzar en la posición superior
+        },
+        style: getToastStyles("#17a2b8"),
+        onClick: function() {},
+        callback: function() {
+            // Remover del array cuando se cierre
+            const index = activeToasts.indexOf(toast);
+            if (index > -1) {
+                activeToasts.splice(index, 1);
+            }
+            // Reposicionar toasts restantes con la altura correcta
+            setTimeout(repositionToasts, 100);
+        }
+    });
+    
+    toast.showToast();
+    activeToasts.push(toast);
+    
+    // Ajustar posiciones con alturas reales después del render
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            repositionToasts();
+            
+            // Aplicar estilos al botón de cerrar
+            const toastElements = document.querySelectorAll('.toastify');
+            const toastElement = toastElements[toastElements.length - 1];
+            if (toastElement) {
+                const closeButton = toastElement.querySelector('.toast-close');
+                if (closeButton) {
+                    closeButton.style.cssText = getCloseButtonStyles();
+                    closeButton.addEventListener('mouseenter', () => {
+                        closeButton.style.opacity = '1';
+                    });
+                    closeButton.addEventListener('mouseleave', () => {
+                        closeButton.style.opacity = '0.7';
+                    });
+                }
+            }
+        });
+    });
 }
 
 // Objeto global para acceder a las notificaciones

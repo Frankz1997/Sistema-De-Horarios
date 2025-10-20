@@ -163,12 +163,20 @@ async function handleLogin(email, password) {
     }
 
     if (data.user) {
+        // Obtener información adicional del usuario desde la tabla usuarios
+        const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('nombre, foto_perfil')
+            .eq('id', data.user.id)
+            .single();
+        
         // Create a user profile object from the Supabase user data.
         const userProfile = {
             id: data.user.id,
             email: data.user.email,
-            nombre: data.user.user_metadata.nombre,
-            role: data.user.user_metadata.role
+            nombre: userData?.nombre || data.user.user_metadata.nombre,
+            role: data.user.user_metadata.role,
+            foto_perfil: userData?.foto_perfil || null
         };
         setUser(userProfile); // Update the global state
         
@@ -305,12 +313,20 @@ export async function checkSession() {
     
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
+        // Obtener información adicional del usuario desde la tabla usuarios
+        const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('nombre, foto_perfil')
+            .eq('id', session.user.id)
+            .single();
+        
         // If a session is found, create the user profile and update the state.
         const userProfile = {
             id: session.user.id,
             email: session.user.email,
-            nombre: session.user.user_metadata.nombre,
-            role: session.user.user_metadata.role
+            nombre: userData?.nombre || session.user.user_metadata.nombre,
+            role: session.user.user_metadata.role,
+            foto_perfil: userData?.foto_perfil || null
         };
         setUser(userProfile);
         return true;
@@ -403,7 +419,7 @@ export function setupLogoutListener() {
     // This listener handles the logout button, which only exists after the app is initialized.
     document.addEventListener('click', (e) => {
         // Usar closest para capturar clicks en el botón o sus elementos internos (SVG, texto)
-        const logoutBtn = e.target.closest('#logout-button');
+        const logoutBtn = e.target.closest('#logout-button, #user-logout');
         if (logoutBtn) {
             console.log('Logout button clicked'); // Debug
             handleLogout();

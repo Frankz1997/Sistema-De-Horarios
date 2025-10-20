@@ -223,6 +223,8 @@ body::-webkit-scrollbar {
 
 .view {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ==========================================================================
@@ -794,6 +796,9 @@ body::-webkit-scrollbar {
 
 .main-layout {
     display: flex;
+    flex: 1;
+    position: relative;
+    min-height: calc(100vh - 3.5rem); /* Altura completa menos el navbar */
 }
 
 .main-content {
@@ -821,7 +826,8 @@ body::-webkit-scrollbar {
     color: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     width: 100%;
-    overflow: hidden; /* Evitar que el contenido se desborde */
+    position: relative;
+    z-index: 100;
 }
 
 /* Animación solo en carga inicial */
@@ -835,7 +841,7 @@ body::-webkit-scrollbar {
     justify-content: space-between;
     height: 3.5rem;
     padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-right: 1.5rem; /* Más espacio a la derecha para el dropdown */
     max-width: 100vw; /* Asegurar que no exceda el ancho de la ventana */
     box-sizing: border-box; /* Incluir padding en el cálculo del ancho */
 }
@@ -927,6 +933,9 @@ body::-webkit-scrollbar {
     align-items: center;
     gap: 0.75rem; /* Espacio entre toggle y user-info */
     flex-shrink: 0; /* Evitar que se comprima */
+    position: relative;
+    z-index: 1001;
+    margin-right: 0.5rem; /* Separación del borde derecho */
 }
 
 /* Theme Toggle en el Header */
@@ -964,30 +973,69 @@ body::-webkit-scrollbar {
     stroke: var(--uas-gold) !important;
 }
 
+/* User Menu Container */
+.user-menu-container {
+    position: relative;
+    z-index: 1001;
+}
+
 .user-info {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     background-color: rgba(255, 255, 255, 0.1);
-    padding: 0.35rem 0.65rem; /* Padding más compacto */
+    padding: 0.35rem 0.65rem;
     border-radius: var(--radius);
-    /* Prevents the user's name from pushing other elements */
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 180px; /* Reducir max-width para dar más espacio al botón */
-    font-size: 0.9rem; /* Reducir tamaño de fuente */
-    transition: background-color 0.2s ease;
+    max-width: 200px;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    border: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .user-info:hover {
     background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.user-info:active {
+    transform: translateY(0);
+}
+
+.user-menu-chevron {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.user-info.active .user-menu-chevron {
+    transform: rotate(180deg);
+}
+
+/* User Avatar */
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-info #user-avatar-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
 }
 
 .user-info p { 
     margin: 0; 
     line-height: 1.2; 
-    /* Prevents text from wrapping and breaking the layout */
     white-space: nowrap; 
 }
 
@@ -1002,6 +1050,75 @@ body::-webkit-scrollbar {
     color: var(--uas-gold); 
 }
 
+/* User Dropdown */
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: var(--card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 9999;
+}
+
+.user-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.9rem;
+    color: var(--foreground);
+}
+
+.user-dropdown-item:first-child {
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.user-dropdown-item:last-child {
+    border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.user-dropdown-item:hover {
+    background-color: rgba(0, 51, 102, 0.08);
+}
+
+.user-dropdown-item i,
+.user-dropdown-item svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0;
+}
+
+/* Logout item specific style */
+.user-dropdown-item#user-logout {
+    color: var(--destructive);
+}
+
+.user-dropdown-item#user-logout:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--destructive);
+}
+
 
 /* ==========================================================================
    Sidebar
@@ -1010,8 +1127,10 @@ body::-webkit-scrollbar {
     background-color: var(--uas-blue);
     color: var(--sidebar-foreground);
     width: 200px;
-    min-height: calc(100vh - 4rem);
+    min-height: 100vh;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 10;
 }
 
 /* Animación solo en carga inicial */
@@ -1307,6 +1426,33 @@ body::-webkit-scrollbar {
 }
 .info-row i { color: var(--uas-gold); width: 1rem; height: 1rem; }
 .info-row span { color: var(--uas-blue); word-break: break-all; }
+
+/* Estilos para el status de carreras */
+.info-row .status-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.info-row .status-icon.status-active {
+    color: #16a34a;
+    stroke: #16a34a;
+}
+
+.info-row .status-icon.status-inactive {
+    color: #dc2626;
+    stroke: #dc2626;
+}
+
+.info-row .status-text.status-active {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.info-row .status-text.status-inactive {
+    color: #dc2626;
+    font-weight: 500;
+}
+
 .tags-container {
     padding-top: 0.5rem;
     margin-top: 0.5rem;
@@ -1325,6 +1471,18 @@ body::-webkit-scrollbar {
     background-color: rgba(255, 183, 27, 0.2);
     color: var(--uas-blue);
 }
+
+.tag-nivel {
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    background-color: rgba(255, 183, 27, 0.25);
+    color: white;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 0.15rem;
+}
+
 .tag-small {
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
@@ -1513,6 +1671,14 @@ body::-webkit-scrollbar {
 .modal-body .tags button:not(.selected) {
     background-color: #e9ecef;
     color: #6c757d;
+}
+
+/* Acciones del formulario */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
 }
 
 /* Estilos para reportes en modal */
@@ -2296,6 +2462,56 @@ body::-webkit-scrollbar {
 /* ==========================================================================
    Estilos para Notificaciones (Toasts)
    ========================================================================== */
+
+/* Estilos para Toastify */
+.toastify {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    position: fixed !important;
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+    transition: top 0.3s ease !important;
+}
+
+.toastify.on {
+    opacity: 1;
+}
+
+/* Asegurar que los toasts se apilen correctamente */
+.toastify-right {
+    right: 15px !important;
+}
+
+/* El top será manejado dinámicamente por JavaScript */
+
+.toastify .toast-close {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    color: #666;
+}
+
+.toastify .toast-close:hover {
+    opacity: 1;
+}
+
+[data-theme="dark"] .toastify .toast-close {
+    color: #94a3b8;
+}
+
 [data-sonner-toast] {
     --normal-bg: #FFFFFF;
     --normal-border: var(--border-color);
@@ -2761,6 +2977,24 @@ body::-webkit-scrollbar {
     background-color: rgba(255, 255, 255, 0.12);
 }
 
+[data-theme="dark"] .user-dropdown {
+    background: var(--card);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .user-dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .user-dropdown-item#user-logout:hover {
+    background-color: rgba(220, 53, 69, 0.15);
+}
+
+[data-theme="dark"] .user-dropdown-divider {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 [data-theme="dark"] .settings-section {
     background-color: var(--card);
     border-color: var(--border-color);
@@ -2954,6 +3188,24 @@ body::-webkit-scrollbar {
     color: var(--foreground);
 }
 
+[data-theme="dark"] .info-row .status-icon.status-active {
+    color: #22c55e;
+    stroke: #22c55e;
+}
+
+[data-theme="dark"] .info-row .status-icon.status-inactive {
+    color: #ef4444;
+    stroke: #ef4444;
+}
+
+[data-theme="dark"] .info-row .status-text.status-active {
+    color: #22c55e;
+}
+
+[data-theme="dark"] .info-row .status-text.status-inactive {
+    color: #ef4444;
+}
+
 [data-theme="dark"] .stat-card-value {
     color: white;
 }
@@ -2970,6 +3222,12 @@ body::-webkit-scrollbar {
     background-color: rgba(255, 183, 27, 0.15);
     color: var(--uas-gold);
     border: 1px solid rgba(255, 183, 27, 0.3);
+}
+
+[data-theme="dark"] .tag-nivel {
+    background-color: rgba(255, 183, 27, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 183, 27, 0.4);
 }
 
 [data-theme="dark"] .tag-small {
@@ -3350,13 +3608,16 @@ body.sidebar-open {
    Footer
    ========================================================================== */
 .app-footer {
-    background-color: var(--card);
-    border-top: 1px solid var(--border-color);
-    padding: 0.75rem 1rem;
+    background: linear-gradient(to bottom, rgba(248, 249, 250, 0) 0%, var(--card) 30%, var(--card) 100%);
+    border-top: none;
+    padding: 1.5rem 1rem 0.75rem 1rem;
     text-align: center;
     font-size: 0.85rem;
     color: var(--muted-foreground);
-    margin-top: auto;
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
+    margin-left: 200px; /* Ancho del sidebar */
 }
 
 .footer-content {
@@ -3365,6 +3626,7 @@ body.sidebar-open {
     justify-content: center;
     gap: 0.75rem;
     flex-wrap: wrap;
+    pointer-events: auto;
 }
 
 .footer-separator {
@@ -3387,8 +3649,8 @@ body.sidebar-open {
 }
 
 [data-theme="dark"] .app-footer {
-    background-color: var(--background);
-    border-top-color: rgba(255, 183, 27, 0.2);
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0) 0%, var(--background) 30%, var(--background) 100%);
+    border-top: none;
 }
 
 [data-theme="dark"] #app-version {
@@ -3471,26 +3733,68 @@ body.sidebar-open {
     .navbar-user {
         gap: 0.25rem;
         flex-shrink: 0;
+        margin-right: 0.25rem;
     }
     
     .user-info {
-        max-width: 90px;
-        padding: 0.2rem 0.35rem;
-        font-size: 0.7rem;
+        max-width: none;
+        min-width: auto;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+        gap: 0.35rem;
     }
     
     .user-info i,
     .user-info svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .user-info #user-name {
+        font-size: 0.75rem;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .user-info #user-role {
+        font-size: 0.65rem;
+    }
+    
+    .user-avatar {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .user-menu-chevron {
         width: 14px;
         height: 14px;
     }
     
-    .user-info #user-name {
-        font-size: 0.7rem;
+    .user-info #user-avatar-icon {
+        width: 16px;
+        height: 16px;
     }
     
-    .user-info #user-role {
-        font-size: 0.6rem;
+    .user-menu-chevron {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .user-dropdown {
+        right: -10px;
+        min-width: 180px;
+    }
+    
+    .user-dropdown-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    .user-dropdown-item i,
+    .user-dropdown-item svg {
+        width: 16px;
+        height: 16px;
     }
     
     .theme-toggle-header {
@@ -3543,6 +3847,11 @@ body.sidebar-open {
         padding: 1rem;
         min-height: calc(100vh - 3rem);
         box-sizing: border-box;
+    }
+    
+    /* Footer sin margen en móvil */
+    .app-footer {
+        margin-left: 0;
     }
     
     /* Cards más pequeños en móvil */

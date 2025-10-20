@@ -24,10 +24,10 @@ export function renderCarreras() {
             <div class="card-header bg-blue">
                 <div class="card-header-content">
                     <div class="card-title-group">
-                        <div class="icon-wrapper bg-white"><i data-lucide="graduation-cap" class="text-blue"></i></div>
+                        <div class="icon-wrapper bg-gold"><i data-lucide="graduation-cap"></i></div>
                         <div>
                             <h3 class="card-title">${c.codigo}</h3>
-                            <p style="font-size: 0.8rem; opacity: 0.8;">${c.nivel_academico || ''}</p>
+                            <span class="tag tag-nivel">${c.nivel_academico || ''}</span>
                         </div>
                     </div>
                     <div class="card-actions">
@@ -42,9 +42,9 @@ export function renderCarreras() {
                     <i data-lucide="building-2"></i>
                     <span>${c.departamento || 'Sin departamento'}</span>
                 </div>
-                <div class="info-row">
-                    <i data-lucide="${c.activo ? 'check-circle' : 'x-circle'}"></i>
-                    <span style="color: ${c.activo ? 'var(--uas-blue)' : 'var(--muted-foreground)'}">
+                <div class="info-row status-row">
+                    <i data-lucide="${c.activo ? 'check-circle' : 'x-circle'}" class="status-icon ${c.activo ? 'status-active' : 'status-inactive'}"></i>
+                    <span class="status-text ${c.activo ? 'status-active' : 'status-inactive'}">
                         ${c.activo ? 'Activa' : 'Inactiva'}
                     </span>
                 </div>

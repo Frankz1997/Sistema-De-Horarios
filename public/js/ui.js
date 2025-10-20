@@ -83,14 +83,30 @@ export function renderAppLayout() {
                     <button id="theme-toggle-btn" class="theme-toggle-header" title="Cambiar tema">
                         <i data-lucide="sun" id="theme-icon"></i>
                     </button>
-                    <div class="user-info">
-                        <i data-lucide="user"></i>
-                        <div>
-                            <p id="user-name">${state.user.nombre}</p>
-                            <p id="user-role" class="capitalize">${state.user.role}</p>
+                    <div class="user-menu-container">
+                        <button class="user-info" id="user-menu-toggle">
+                            ${state.user.foto_perfil 
+                                ? `<img src="${state.user.foto_perfil}" alt="Foto de perfil" class="user-avatar" id="user-avatar-img">` 
+                                : `<i data-lucide="user" id="user-avatar-icon"></i>`
+                            }
+                            <div>
+                                <p id="user-name">${state.user.nombre}</p>
+                                <p id="user-role" class="capitalize">${state.user.role}</p>
+                            </div>
+                            <i data-lucide="chevron-down" class="user-menu-chevron"></i>
+                        </button>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <div class="user-dropdown-item" id="user-account-settings">
+                                <i data-lucide="settings"></i>
+                                <span>Opciones de Cuenta</span>
+                            </div>
+                            <div class="user-dropdown-divider"></div>
+                            <div class="user-dropdown-item" id="user-logout">
+                                <i data-lucide="log-out"></i>
+                                <span>Cerrar Sesión</span>
+                            </div>
                         </div>
                     </div>
-                    <button id="logout-button" class="btn btn-ghost"><i data-lucide="log-out"></i> <span class="btn-text">Salir</span></button>
                 </div>
             </div>
         </nav>
@@ -99,13 +115,6 @@ export function renderAppLayout() {
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
             <main id="main-content" class="main-content"></main>
         </div>
-        <footer class="app-footer">
-            <div class="footer-content">
-                <span id="app-version">Cargando versión...</span>
-                <span class="footer-separator">•</span>
-                <span>© 2025 FIMAZ - UAS</span>
-            </div>
-        </footer>
     </div>`;
 }
 
@@ -463,3 +472,221 @@ modalBackdrop.addEventListener('click', (e) => {
         closeModal();
     }
 });
+
+/**
+ * Inicializa el dropdown del menú de usuario
+ */
+export function initUserDropdown() {
+    const userMenuToggle = document.getElementById('user-menu-toggle');
+    const userDropdown = document.getElementById('user-dropdown');
+    
+    if (!userMenuToggle || !userDropdown) return;
+    
+    // Toggle del dropdown
+    userMenuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isShown = userDropdown.classList.contains('show');
+        
+        if (isShown) {
+            closeUserDropdown();
+        } else {
+            openUserDropdown();
+        }
+    });
+    
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.user-menu-container')) {
+            closeUserDropdown();
+        }
+    });
+    
+    // Handler para "Opciones de Cuenta"
+    const accountSettingsBtn = document.getElementById('user-account-settings');
+    if (accountSettingsBtn) {
+        accountSettingsBtn.addEventListener('click', () => {
+            closeUserDropdown();
+            openAccountSettingsModal();
+        });
+    }
+}
+
+function openUserDropdown() {
+    const userMenuToggle = document.getElementById('user-menu-toggle');
+    const userDropdown = document.getElementById('user-dropdown');
+    
+    userMenuToggle.classList.add('active');
+    userDropdown.classList.add('show');
+    
+    // Re-renderizar íconos
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function closeUserDropdown() {
+    const userMenuToggle = document.getElementById('user-menu-toggle');
+    const userDropdown = document.getElementById('user-dropdown');
+    
+    if (userMenuToggle) userMenuToggle.classList.remove('active');
+    if (userDropdown) userDropdown.classList.remove('show');
+}
+
+/**
+ * Abre el modal de configuración de cuenta del usuario
+ */
+function openAccountSettingsModal() {
+    const currentPhotoUrl = state.user.foto_perfil || '';
+    const photoPreview = currentPhotoUrl 
+        ? `<img src="${currentPhotoUrl}" alt="Foto de perfil" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--uas-blue);">` 
+        : `<div style="width: 100px; height: 100px; border-radius: 50%; background: var(--muted); display: flex; align-items: center; justify-content: center; border: 3px solid var(--uas-blue);"><i data-lucide="user" style="width: 50px; height: 50px; color: var(--muted-foreground);"></i></div>`;
+    
+    const modalContent = `
+        <form id="account-settings-form">
+            <div class="form-group">
+                <label>Foto de Perfil</label>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem; background: var(--muted); border-radius: var(--radius);">
+                    <div id="photo-preview">
+                        ${photoPreview}
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <input type="file" id="edit-user-photo" accept="image/*" style="display: none;">
+                        <button type="button" id="btn-select-photo" class="btn btn-outline" style="flex: 1;">
+                            <i data-lucide="upload"></i>
+                            Seleccionar Foto
+                        </button>
+                        ${currentPhotoUrl ? `
+                        <button type="button" id="btn-remove-photo" class="btn btn-outline" style="color: var(--destructive); border-color: var(--destructive);">
+                            <i data-lucide="trash-2"></i>
+                            Eliminar
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="edit-user-nombre">Nombre Completo</label>
+                <input type="text" id="edit-user-nombre" value="${state.user.nombre}" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-user-email">Correo Electrónico</label>
+                <input type="email" id="edit-user-email" value="${state.user.email}" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-user-password">Nueva Contraseña (opcional)</label>
+                <input type="password" id="edit-user-password" placeholder="Dejar en blanco para no cambiar">
+            </div>
+            <div class="form-group">
+                <label for="edit-user-password-confirm">Confirmar Nueva Contraseña</label>
+                <input type="password" id="edit-user-password-confirm" placeholder="Confirmar contraseña">
+            </div>
+            <div class="form-actions">
+                <button type="button" id="cancel-btn" class="btn btn-outline">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    `;
+    
+    openModal({
+        title: 'Opciones de Cuenta',
+        description: 'Actualiza tu información personal y credenciales.',
+        body: modalContent
+    });
+    
+    // Inicializar listeners después de que el modal se renderice
+    setTimeout(() => {
+        initPhotoUploadListeners();
+        lucide.createIcons();
+    }, 100);
+}
+
+/**
+ * Inicializa los listeners para la carga de foto de perfil
+ */
+function initPhotoUploadListeners() {
+    const fileInput = document.getElementById('edit-user-photo');
+    const selectBtn = document.getElementById('btn-select-photo');
+    const removeBtn = document.getElementById('btn-remove-photo');
+    
+    if (selectBtn && fileInput) {
+        selectBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handlePhotoSelection(file);
+            }
+        });
+    }
+    
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+            handlePhotoRemoval();
+        });
+    }
+}
+
+/**
+ * Maneja la selección de una foto
+ */
+function handlePhotoSelection(file) {
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+        window.showToast('Por favor selecciona una imagen válida', 'error');
+        return;
+    }
+    
+    // Validar tamaño (máximo 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        window.showToast('La imagen no debe superar los 2MB', 'error');
+        return;
+    }
+    
+    // Mostrar preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const preview = document.getElementById('photo-preview');
+        if (preview) {
+            preview.innerHTML = `
+                <img src="${e.target.result}" alt="Preview" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--uas-blue);">
+            `;
+        }
+        
+        // Guardar el archivo en un atributo temporal para usarlo en el submit
+        document.getElementById('edit-user-photo').setAttribute('data-has-new-photo', 'true');
+    };
+    reader.readAsDataURL(file);
+}
+
+/**
+ * Maneja la eliminación de la foto de perfil
+ */
+function handlePhotoRemoval() {
+    const preview = document.getElementById('photo-preview');
+    if (preview) {
+        preview.innerHTML = `
+            <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--muted); display: flex; align-items: center; justify-content: center; border: 3px solid var(--uas-blue);">
+                <i data-lucide="user" style="width: 50px; height: 50px; color: var(--muted-foreground);"></i>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+    
+    // Marcar para eliminar
+    const fileInput = document.getElementById('edit-user-photo');
+    if (fileInput) {
+        fileInput.value = '';
+        fileInput.setAttribute('data-remove-photo', 'true');
+    }
+    
+    // Ocultar botón de eliminar
+    const removeBtn = document.getElementById('btn-remove-photo');
+    if (removeBtn) {
+        removeBtn.style.display = 'none';
+    }
+}
+
+// Exportar funciones para cerrar dropdown
+export { closeUserDropdown };

@@ -27,7 +27,7 @@ export function renderAsignaturas() {
                         <div class="icon-wrapper bg-white"><i data-lucide="book-open" class="text-gold"></i></div>
                         <div>
                             <h3 class="card-title">${a.codigo}</h3>
-                            <p style="font-size: 0.8rem; opacity: 0.8;">${a.modalidad || ''}</p>
+                            <span class="tag tag-nivel">${a.modalidad || ''}</span>
                         </div>
                     </div>
                     <div class="card-actions">

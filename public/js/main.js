@@ -2,8 +2,9 @@
  * Punto de entrada principal del frontend
  */
 import { state, setActiveView, loadData, setHorariosViewMode } from './state.js';
-import { checkSession, setupAuthEventListeners, setupLogoutListener } from './auth.js';
-import { renderAppLayout, renderLogin, renderSidebar, closeModal, loadAppVersion } from './ui.js';
+import { checkSession, setupAuthEventListeners, setupLogoutListener, supabase } from './auth.js';
+import { renderAppLayout, renderLogin, renderSidebar, closeModal, loadAppVersion, initUserDropdown } from './ui.js';
+import { showToast } from './toast.js';
 import { api } from './api.js'; 
 import { renderDashboard } from './views/dashboard.js';
 import { renderMaestros, handleAddMaestro, handleEditMaestro, handleDeleteMaestro, handleMaestroFormSubmit } from './views/maestros.js';
@@ -46,6 +47,11 @@ export function renderCurrentView() {
         if (state.activeView === 'configuraciones') {
             setupSettingsDropdowns();
             initConfiguracionesListeners(); // Inicializar listeners del logo
+        }
+        
+        // Inicializar event listeners de acordeones si estamos en vista de horarios en modo lista
+        if (state.activeView === 'horarios' && state.horariosViewMode === 'lista') {
+            initAccordionListeners();
         }
     }
 }
@@ -141,6 +147,7 @@ export async function initializeApp() {
     setupLogoutListener(); // Configurar listener para el botón de cerrar sesión
     setupHeaderThemeToggle(); // Configurar el toggle de tema en el header
     setupBrandLogoListener(); // Configurar listener para el logo
+    initUserDropdown(); // Inicializar dropdown del usuario
     await loadInitialData(); // Ahora esto funcionará
     renderSidebar(); // Y esto se ejecutará
     navigateTo('dashboard'); // Y esto también
@@ -280,6 +287,7 @@ function setupAppEventListeners() {
         if (e.target.id === 'carrera-form') handleCarreraFormSubmit(e);
         if (e.target.id === 'horario-form') handleHorarioFormSubmit(e);
         if (e.target.id === 'perfil-form') handlePerfilFormSubmit(e);
+        if (e.target.id === 'account-settings-form') handleAccountSettingsFormSubmit(e);
     });
 
     modalContainer.addEventListener('click', (e) => {
@@ -307,6 +315,158 @@ function closeMobileSidebar() {
         sidebar.classList.remove('mobile-open');
         overlay.classList.remove('active');
         document.body.classList.remove('sidebar-open');
+    }
+}
+
+/**
+ * Maneja el envío del formulario de configuración de cuenta
+ */
+async function handleAccountSettingsFormSubmit(e) {
+    e.preventDefault();
+    
+    const nombre = document.getElementById('edit-user-nombre').value.trim();
+    const email = document.getElementById('edit-user-email').value.trim();
+    const password = document.getElementById('edit-user-password').value.trim();
+    const passwordConfirm = document.getElementById('edit-user-password-confirm').value.trim();
+    const fileInput = document.getElementById('edit-user-photo');
+    
+    // Validación
+    if (!nombre || !email) {
+        showToast.error('Por favor completa todos los campos obligatorios');
+        return;
+    }
+    
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast.error('Por favor ingresa un correo válido');
+        return;
+    }
+    
+    // Si se está cambiando la contraseña, validar
+    if (password || passwordConfirm) {
+        if (password !== passwordConfirm) {
+            showToast.error('Las contraseñas no coinciden');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showToast.error('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+    }
+    
+    try {
+        // Preparar datos a actualizar
+        const updates = { nombre };
+        let newPhotoUrl = state.user.foto_perfil;
+        
+        // Manejar foto de perfil
+        if (fileInput && fileInput.hasAttribute('data-remove-photo')) {
+            // Eliminar foto
+            newPhotoUrl = null;
+            updates.foto_perfil = null;
+        } else if (fileInput && fileInput.hasAttribute('data-has-new-photo') && fileInput.files.length > 0) {
+            // Subir nueva foto
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${state.user.id}-${Date.now()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+            
+            // Subir archivo a Supabase Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('profile-photos')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+            
+            if (uploadError) {
+                console.error('Error al subir foto:', uploadError);
+                showToast.error('Error al subir la foto. Continuando con otros cambios...');
+            } else {
+                // Obtener URL pública
+                const { data: urlData } = supabase.storage
+                    .from('profile-photos')
+                    .getPublicUrl(filePath);
+                
+                newPhotoUrl = urlData.publicUrl;
+                updates.foto_perfil = newPhotoUrl;
+            }
+        }
+        
+        // Si cambió el email
+        if (email !== state.user.email) {
+            updates.email = email;
+        }
+        
+        // Si se proporcionó una nueva contraseña
+        if (password) {
+            updates.password = password;
+        }
+        
+        // Actualizar en la tabla usuarios
+        const { error: userError } = await supabase
+            .from('usuarios')
+            .update({ nombre, foto_perfil: updates.foto_perfil || null })
+            .eq('id', state.user.id);
+        
+        if (userError) throw userError;
+        
+        // Si se cambió email o contraseña, actualizar en Supabase Auth
+        if (updates.email || updates.password) {
+            const authUpdates = {};
+            if (updates.email) authUpdates.email = updates.email;
+            if (updates.password) authUpdates.password = updates.password;
+            
+            const { error: authError } = await supabase.auth.updateUser(authUpdates);
+            if (authError) throw authError;
+            
+            if (updates.email) {
+                showToast.info('Se ha enviado un correo de confirmación a tu nueva dirección');
+            }
+        }
+        
+        // Actualizar estado local
+        state.user.nombre = nombre;
+        state.user.foto_perfil = newPhotoUrl;
+        if (updates.email) state.user.email = email;
+        
+        // Actualizar UI del nombre
+        const userNameElement = document.getElementById('user-name');
+        if (userNameElement) {
+            userNameElement.textContent = nombre;
+        }
+        
+        // Actualizar avatar en el navbar
+        const userInfo = document.querySelector('.user-info');
+        if (userInfo) {
+            // Buscar el elemento del avatar (puede ser un ícono o una imagen)
+            const avatarIcon = userInfo.querySelector('#user-avatar-icon');
+            const avatarImg = userInfo.querySelector('#user-avatar-img');
+            
+            if (newPhotoUrl) {
+                // Si hay nueva foto, reemplazar lo que exista por imagen
+                if (avatarIcon) {
+                    avatarIcon.outerHTML = `<img src="${newPhotoUrl}" alt="Foto de perfil" class="user-avatar" id="user-avatar-img">`;
+                } else if (avatarImg) {
+                    avatarImg.src = newPhotoUrl;
+                }
+            } else {
+                // Si se eliminó la foto, reemplazar por icono
+                if (avatarImg) {
+                    avatarImg.outerHTML = `<i data-lucide="user" id="user-avatar-icon"></i>`;
+                    lucide.createIcons();
+                }
+            }
+        }
+        
+        showToast.success('Cuenta actualizada exitosamente');
+        closeModal();
+        
+    } catch (error) {
+        console.error('Error al actualizar cuenta:', error);
+        showToast.error('Error al actualizar la cuenta: ' + error.message);
     }
 }
 
